@@ -1,0 +1,22 @@
+{
+  "name": "webrtc-examples",
+  "version": "1.0.0",
+  "description": "WebRTC examples and signaling server",
+  "main": "webrtc-signaling-server.js",
+  "scripts": {
+    "start": "node webrtc-signaling-server.js",
+    "server": "node webrtc-signaling-server.js"
+  },
+  "keywords": [
+    "webrtc",
+    "signaling",
+    "websocket",
+    "video-chat"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  }
+}
+

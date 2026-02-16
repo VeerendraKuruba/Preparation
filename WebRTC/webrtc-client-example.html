@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Client with Signaling</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { margin-bottom: 20px; color: #0f3460; }
+        .section {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .video-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        video {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #0f3460;
+            color: white;
+            font-size: 14px;
+        }
+        button:hover { background: #16213e; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status {
+            padding: 10px;
+            background: #0f3460;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px;
+        }
+        .log-info { color: #4CAF50; }
+        .log-error { color: #f44336; }
+        .log-warn { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebRTC Client with Signaling Server</h1>
+        
+        <div class="section">
+            <div class="status" id="status">Disconnected</div>
+            <button id="connectBtn">Connect to Server</button>
+            <button id="startMediaBtn" disabled>Start Media</button>
+            <button id="callBtn" disabled>Start Call</button>
+            <button id="endBtn" disabled>End Call</button>
+        </div>
+
+        <div class="section">
+            <div class="video-container">
+                <div>
+                    <h3>Local Video</h3>
+                    <video id="localVideo" autoplay muted playsinline></video>
+                </div>
+                <div>
+                    <h3>Remote Video</h3>
+                    <video id="remoteVideo" autoplay playsinline></video>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Connection Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SIGNALING_SERVER = 'ws://localhost:8080';
+        const RTC_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        // DOM Elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const connectBtn = document.getElementById('connectBtn');
+        const startMediaBtn = document.getElementById('startMediaBtn');
+        const callBtn = document.getElementById('callBtn');
+        const endBtn = document.getElementById('endBtn');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+
+        // State
+        let ws = null;
+        let localStream = null;
+        let peerConnection = null;
+        let clientId = null;
+        let isInitiator = false;
+
+        // Logging
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+
+        // Update status
+        function updateStatus(text) {
+            status.textContent = text;
+        }
+
+        // Connect to signaling server
+        connectBtn.addEventListener('click', () => {
+            addLog('Connecting to signaling server...');
+            ws = new WebSocket(SIGNALING_SERVER);
+
+            ws.onopen = () => {
+                addLog('Connected to signaling server', 'info');
+                updateStatus('Connected');
+                connectBtn.disabled = true;
+                startMediaBtn.disabled = false;
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleSignalingMessage(message);
+            };
+
+            ws.onerror = (error) => {
+                addLog('WebSocket error: ' + error, 'error');
+            };
+
+            ws.onclose = () => {
+                addLog('Disconnected from signaling server', 'warn');
+                updateStatus('Disconnected');
+                connectBtn.disabled = false;
+                startMediaBtn.disabled = true;
+                callBtn.disabled = true;
+            };
+        });
+
+        // Handle signaling messages
+        function handleSignalingMessage(message) {
+            switch (message.type) {
+                case 'client-id':
+                    clientId = message.id;
+                    addLog(`Assigned client ID: ${clientId}`);
+                    break;
+
+                case 'offer':
+                    addLog('Received offer from peer');
+                    handleOffer(message.offer);
+                    break;
+
+                case 'answer':
+                    addLog('Received answer from peer');
+                    handleAnswer(message.answer);
+                    break;
+
+                case 'ice-candidate':
+                    addLog('Received ICE candidate');
+                    handleIceCandidate(message.candidate);
+                    break;
+
+                case 'peers-list':
+                    addLog(`Available peers: ${message.peers.length}`);
+                    break;
+
+                case 'peer-disconnected':
+                    addLog('Peer disconnected');
+                    break;
+
+                default:
+                    addLog(`Unknown message type: ${message.type}`, 'warn');
+            }
+        }
+
+        // Send message to signaling server
+        function sendSignalingMessage(message) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+            }
+        }
+
+        // Start local media
+        startMediaBtn.addEventListener('click', async () => {
+            try {
+                addLog('Requesting user media...');
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+                addLog('Media access granted', 'info');
+                callBtn.disabled = false;
+            } catch (error) {
+                addLog('Error accessing media: ' + error.message, 'error');
+            }
+        });
+
+        // Start call
+        callBtn.addEventListener('click', async () => {
+            try {
+                addLog('Creating peer connection...');
+                peerConnection = new RTCPeerConnection(RTC_CONFIG);
+
+                // Add local tracks
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Handle remote stream
+                peerConnection.ontrack = (event) => {
+                    addLog('Received remote stream', 'info');
+                    remoteVideo.srcObject = event.streams[0];
+                };
+
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        sendSignalingMessage({
+                            type: 'ice-candidate',
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                // Handle connection state
+                peerConnection.onconnectionstatechange = () => {
+                    const state = peerConnection.connectionState;
+                    addLog(`Connection state: ${state}`);
+                    updateStatus(`Connection: ${state}`);
+                };
+
+                // Create offer
+                isInitiator = true;
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                addLog('Created offer');
+
+                sendSignalingMessage({
+                    type: 'offer',
+                    offer: offer
+                });
+
+                callBtn.disabled = true;
+                endBtn.disabled = false;
+            } catch (error) {
+                addLog('Error starting call: ' + error.message, 'error');
+            }
+        });
+
+        // Handle offer
+        async function handleOffer(offer) {
+            try {
+                if (!peerConnection) {
+                    peerConnection = new RTCPeerConnection(RTC_CONFIG);
+                    setupPeerConnection();
+                }
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                sendSignalingMessage({
+                    type: 'answer',
+                    answer: answer
+                });
+
+                addLog('Sent answer');
+            } catch (error) {
+                addLog('Error handling offer: ' + error.message, 'error');
+            }
+        }
+
+        // Handle answer
+        async function handleAnswer(answer) {
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+                addLog('Answer processed');
+            } catch (error) {
+                addLog('Error handling answer: ' + error.message, 'error');
+            }
+        }
+
+        // Handle ICE candidate
+        async function handleIceCandidate(candidate) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (error) {
+                addLog('Error adding ICE candidate: ' + error.message, 'error');
+            }
+        }
+
+        // Setup peer connection handlers
+        function setupPeerConnection() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+            }
+
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    sendSignalingMessage({
+                        type: 'ice-candidate',
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                addLog(`Connection state: ${peerConnection.connectionState}`);
+            };
+        }
+
+        // End call
+        endBtn.addEventListener('click', () => {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            localVideo.srcObject = null;
+            remoteVideo.srcObject = null;
+
+            addLog('Call ended');
+            callBtn.disabled = false;
+            endBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
+
