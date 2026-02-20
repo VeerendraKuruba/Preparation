@@ -9,8 +9,8 @@ These are the areas where senior rounds are won or lost.
 - [Fiber Reconciliation: Step-by-step flow](./fiber-reconciliation.md) ✅
 - [How React schedules priority updates (Lanes)](./react-lanes-priority-updates.md) ✅
 - [Rules of Hooks and how they are mapped internally](./rules-of-hooks.md) ✅
-- [useState: Functional updates and lazy initialization](./usestate-functional-updates.md) ✅
-- [useEffect: Dependency patterns and Object.is comparison](./useeffect-dependency-patterns.md) ✅
+- [useState: Functional updates and lazy initialization](./use-state-functional-updates.md) ✅
+- [useEffect: Dependency patterns and Object.is comparison](./use-effect-dependency-patterns.md) ✅
 - [Effect Cleanups: Preventing memory leaks](./effect-cleanups.md) ✅
 - [Stale Closures: How to identify and fix them](./stale-closures.md) ✅
 - [Controlled vs. Uncontrolled components](./controlled-vs-uncontrolled-components.md) ✅
@@ -34,8 +34,8 @@ These are the areas where senior rounds are won or lost.
 - [Derived State vs. Stored State](./derived-state-vs-stored-state.md) ✅
 - [Race Conditions in data fetching](./race-conditions-data-fetching.md) ✅
 - [Error Boundaries: Catching render-time failures](./error-boundaries.md) ✅
-- [Concurrent Features: useTransition and startTransition](./usetransition-starttransition.md) ✅
-- [useDeferredValue vs. Debouncing](./usedeferredvalue-vs-debouncing.md) ✅
+- [Concurrent Features: useTransition and startTransition](./use-transition-start-transition.md) ✅
+- [useDeferredValue vs. Debouncing](./use-deferred-value-vs-debouncing.md) ✅
 - [Suspense: Avoiding jarring UI fallbacks](./suspense.md) ✅
 
 ---
