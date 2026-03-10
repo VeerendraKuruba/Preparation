@@ -434,6 +434,171 @@ const tuple = [1, "hello"] as const;
 
 ---
 
+## Up-to-date & modern questions (TS 4.9–5.x)
+
+### Q: What is the `satisfies` operator (TS 4.9+)? How is it different from `as`?
+
+**Answer:** `satisfies` checks that a value **matches** a type (so you get errors if it doesn’t), but the **inferred type stays the narrow one** (e.g. literal types). With `as Type` you assert and the expression’s type becomes `Type`, which can widen and lose literals.
+
+```ts
+type Theme = "light" | "dark";
+type Config = { theme: Theme; size: number };
+
+const config = {
+  theme: "dark",
+  size: 12,
+} satisfies Config;
+// config.theme is "dark" (literal), not Theme — autocomplete and narrowing work
+
+const config2 = {
+  theme: "dark",
+  size: 12,
+} as Config;
+// config2.theme is Theme ("light" | "dark") — widened
+```
+
+Use `satisfies` when you want validation without losing narrow types (e.g. in config objects or maps with literal keys).
+
+---
+
+### Q: What is strict mode? Name two important flags and why they matter.
+
+**Answer:** Strict mode (`"strict": true` in tsconfig) turns on a set of stricter checks. Two that come up often:
+
+- **`strictNullChecks`** — `null` and `undefined` are separate; you must handle them explicitly (e.g. `string | null`). Catches “cannot read property of null” at compile time.
+- **`noImplicitAny`** — Parameters and expressions must have a known type; implicit `any` is an error. Pushes you to add types or fix inference.
+
+Enabling strict mode is standard for production TypeScript; it surfaces bugs early and keeps the type system meaningful.
+
+---
+
+### Q: What are template literal types? Give an example.
+
+**Answer:** Template literal types build string types from literals and other string types, similar to template strings at runtime.
+
+```ts
+type EventName = "click" | "scroll";
+type HandlerName = `on${Capitalize<EventName>}`;
+// "onClick" | "onScroll"
+
+type CSSValue = "left" | "right";
+type CssProp = `margin-${CSSValue}`;
+// "margin-left" | "margin-right"
+```
+
+Useful for type-safe event handlers, CSS props, API routes, or any pattern where names follow a string pattern.
+
+---
+
+### Q: What does the `Awaited<T>` utility type do (TS 4.5+)?
+
+**Answer:** `Awaited<T>` unwraps Promise-like types. If `T` is `Promise<X>`, it resolves to `X`; it also unwraps nested promises (`Promise<Promise<X>>` → `X`). Handy for typing async return values without manual unwrapping.
+
+```ts
+type A = Awaited<Promise<number>>;           // number
+type B = Awaited<Promise<Promise<string>>>;  // string
+async function fetchUser() {
+  return { id: 1, name: "Alice" };
+}
+type User = Awaited<ReturnType<typeof fetchUser>>;  // { id: number; name: string }
+```
+
+---
+
+### Q: What is `NoInfer<T>` (TS 5.4)? When would you use it?
+
+**Answer:** `NoInfer<T>` is a utility that **stops TypeScript from inferring** a generic from that position. The type is still checked against `T`, but it won’t contribute to the inferred type parameters. Use it when one argument would otherwise “pull” a generic into a too-wide union.
+
+```ts
+function createPicker<C extends string>(choices: C[], defaultChoice?: C) {
+  return { choices, default: defaultChoice };
+}
+createPicker(["red", "green"], "blue");  // No error without NoInfer — C becomes "red" | "green" | "blue"
+
+function createPickerStrict<C extends string>(
+  choices: C[],
+  defaultChoice?: NoInfer<C>
+) {
+  return { choices, default: defaultChoice };
+}
+createPickerStrict(["red", "green"], "blue");  // Error — "blue" is not in choices
+```
+
+---
+
+### Q: What are “const” type parameters (TS 5.0)?
+
+**Answer:** You can add `const` before a type parameter (e.g. `function fn<const T>(...)`) so that inference prefers **narrower**, more literal types instead of widening (e.g. `readonly ["a", "b"]` instead of `string[]`). Useful for functions that need to preserve literal tuples or object shapes from arguments.
+
+```ts
+function makePair<T extends readonly string[]>(args: T): T {
+  return args;
+}
+const pair = makePair(["a", "b"]);  // Without const: string[]
+// With <const T>: readonly ["a", "b"]
+```
+
+---
+
+### Q: How does TypeScript’s compilation differ from JavaScript? What does `tsc` emit?
+
+**Answer:** TypeScript is a typed superset of JavaScript. The compiler (`tsc`) **strips types** and emits JavaScript (and optionally source maps). It does not change runtime behavior by default; it only checks types and outputs JS (ES3–ESNext depending on `target`). Types are erased and are not present at runtime.
+
+---
+
+### Q: What is type inference? When does TypeScript infer types?
+
+**Answer:** Type inference is when the compiler deduces types from context instead of you writing them explicitly. Common cases: variable initialization (e.g. `const x = 5` → `number`), function return types, generic type arguments from call arguments, and `satisfies` (shape checked, type still inferred). Relying on inference keeps code concise; add annotations for public APIs or when inference is wrong or too loose.
+
+---
+
+### Q: For Node.js ESM projects, what are recommended `module` and `moduleResolution` settings?
+
+**Answer:** For Node 16+ with ESM, use **`"module": "NodeNext"`** and **`"moduleResolution": "NodeNext"`**. This aligns with Node’s ESM rules: relative imports need `./` or `../`, and you must use **file extensions** (e.g. `.js` for the emitted file). Set `"type": "module"` in package.json. Using NodeNext avoids subtle runtime vs compile-time resolution mismatches.
+
+---
+
+### Q: How can you simulate “nominal” or branded types in TypeScript?
+
+**Answer:** TypeScript’s types are structural (same shape = compatible). To distinguish two types with the same shape (e.g. `UserId` vs `OrderId`), add a **brand** property that exists only in the type system (e.g. `__brand`), and use a helper to create branded values so you don’t accidentally mix them.
+
+```ts
+type UserId = string & { readonly __brand: "UserId" };
+type OrderId = string & { readonly __brand: "OrderId" };
+function toUserId(id: string): UserId {
+  return id as UserId;
+}
+function getOrder(id: OrderId) { }
+getOrder(toUserId("u-1"));  // Error — UserId not assignable to OrderId
+```
+
+---
+
+### Q: What are TypeScript decorators (TS 5.0)? What are they used for?
+
+**Answer:** Decorators are a stabilized ECMAScript feature supported by TypeScript 5.0. They are functions that customize classes, methods, accessors, or parameters. They receive the decorated element and a **context object** (with metadata like kind, name, static/private, and `addInitializer`). Common uses: dependency injection, validation, logging, and frameworks (e.g. Angular, NestJS). They run at class definition/initialization time.
+
+---
+
+### Q: What is the difference between `interface` and `type` for extending?
+
+**Answer:** An **interface** uses `extends` (single or multiple); a **type** uses intersection `&`. Both can extend the other: `interface A extends B {}` or `type A = B & { ... }`. Interfaces can be extended again by name (declaration merging); types cannot be merged.
+
+---
+
+### Q: What tsconfig options do you commonly use for production? What does `skipLibCheck` do?
+
+**Answer:** Common production-related options:
+
+- **`strict: true`** — Enables strict null checks, noImplicitAny, etc.
+- **`skipLibCheck: true`** — Skip type checking of `.d.ts` files (e.g. in node_modules). Speeds up builds; usually safe.
+- **`noEmit: true`** — Type-check only when a bundler does the emit.
+- **`moduleResolution: "Bundler"` or `"NodeNext"`** — Match your runtime/bundler (Vite/Webpack vs Node ESM).
+
+`skipLibCheck` avoids errors from third-party type definitions and reduces compile time; many projects enable it.
+
+---
+
 ## Quick reference
 
 | Symbol / type | Meaning |
@@ -444,10 +609,13 @@ const tuple = [1, "hello"] as const;
 | `T extends U` | Constraint or conditional |
 | `infer X` | Infer type in conditional |
 | `as const` | Literal/readonly narrowing |
+| `satisfies T` | Check shape, keep narrow type (TS 4.9+) |
 | `?.` | Optional chaining |
 | `??` | Nullish coalescing |
 | `never` | Unreachable / exhaustiveness |
+| `Awaited<T>` | Unwrap Promise (TS 4.5+) |
+| `NoInfer<T>` | Block inference for this position (TS 5.4) |
 
 ---
 
-*Use this guide alongside hands-on practice and your `typescript-generics-guide.ts` for deeper generic examples.*
+*Use this guide alongside hands-on practice and your `typescript-generics-guide.ts` for deeper generic examples. Covers TypeScript 4.9–5.x features as of 2025.*
