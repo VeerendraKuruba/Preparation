@@ -86,6 +86,267 @@ You cannot write `interface Result = Success | Failure`.
 
 ---
 
+### Type narrowing in detail (with examples)
+
+**Mental model:** You have a variable of type `A | B | C`. In a given branch, you run a check that rules out some of those options. TypeScript then **narrows** the type in that branch to only the remaining possibilities. The same variable can have a different (narrower) type in different branches.
+
+#### 1. `typeof` narrowing
+
+Use for **primitive** unions. TypeScript recognizes: `"string"`, `"number"`, `"boolean"`, `"symbol"`, `"undefined"`, `"function"`, `"object"`, `"bigint"`.
+
+```ts
+function handle(value: string | number | boolean) {
+  if (typeof value === "string") {
+    return value.padStart(2);      // value is string
+  }
+  if (typeof value === "number") {
+    return value.toFixed(2);       // value is number
+  }
+  return value.valueOf();          // value is boolean
+}
+```
+
+**Important:** `typeof null === "object"`. So for `x: string | null`, checking `typeof x === "object"` does **not** remove `null`. Always use `x === null` or `x != null` when you care about null.
+
+```ts
+function bad(x: string | null) {
+  if (typeof x === "object") return;  // x is still string | null (null is object!)
+  console.log(x.length);              // Error
+}
+function good(x: string | null) {
+  if (x === null) return;
+  console.log(x.length);              // x is string
+}
+```
+
+You can also narrow to **literal** types by comparing to a literal:
+
+```ts
+function theme(value: "light" | "dark" | "auto") {
+  if (value === "auto") {
+    return getSystemTheme();          // value is "auto"
+  }
+  return value;                       // value is "light" | "dark"
+}
+```
+
+---
+
+#### 2. Equality narrowing
+
+Comparing with `===` or `==` narrows the type. `x === null` narrows out `null` in the `else` branch; `x == null` narrows out **both** `null` and `undefined` (because `undefined == null` is true).
+
+```ts
+function example(x: string | null | undefined) {
+  if (x === null) {
+    return "was null";
+  }
+  if (x === undefined) {
+    return "was undefined";
+  }
+  return x.toUpperCase();             // x is string here
+}
+
+function bothNullUndef(x: string | null | undefined) {
+  if (x == null) return "";           // x is null | undefined in this branch
+  return x.toUpperCase();             // x is string
+}
+```
+
+Comparing to a **literal** narrows to that literal (or removes it from the union):
+
+```ts
+function direction(x: "up" | "down" | "left" | "right") {
+  if (x === "up" || x === "down") {
+    return "vertical";                // x is "up" | "down"
+  }
+  return "horizontal";                // x is "left" | "right"
+}
+```
+
+---
+
+#### 3. Truthiness narrowing
+
+In `if (x)` TypeScript treats the branch as excluding **falsy** values: `false`, `0`, `""`, `null`, `undefined`, `NaN`, `0n`. So after `if (x)`, `x` is narrowed to the “truthy” part of its type.
+
+```ts
+function print(str: string | null | undefined) {
+  if (!str) return;                   // narrows out "", null, undefined
+  console.log(str.length);            // str is string (but could still be "" in theory in some unions)
+}
+```
+
+**Pitfall:** If `0` or `""` are valid values, truthiness narrows them out. Prefer explicit checks:
+
+```ts
+function count(value: number | null) {
+  if (value === null) return 0;       // correct: 0 is still a valid number
+  return value + 1;
+}
+```
+
+---
+
+#### 4. `in` operator narrowing
+
+Use when union members are **object types** with different properties. `"key" in obj` narrows to types that have that key (and optionally narrows away types that don’t).
+
+```ts
+type Dog = { bark: () => void; run: () => void };
+type Cat = { meow: () => void; climb: () => void };
+
+function act(pet: Dog | Cat) {
+  if ("bark" in pet) {
+    pet.bark();                       // pet is Dog
+  } else {
+    pet.meow();                       // pet is Cat
+  }
+}
+```
+
+Works with optional properties too: checking `"optionalProp" in obj` narrows to types where that property is present (or defined).
+
+```ts
+type A = { required: number };
+type B = { required: number; optional?: string };
+
+function use(x: A | B) {
+  if ("optional" in x) {
+    console.log(x.optional ?? "");    // x is B (narrowed by presence of optional)
+  }
+}
+```
+
+---
+
+#### 5. `instanceof` narrowing
+
+Use for **class instances**. TypeScript narrows by the constructor in the prototype chain.
+
+```ts
+function handle(err: Error | TypeError | RangeError) {
+  if (err instanceof RangeError) {
+    console.log("Range:", err.message);
+  } else if (err instanceof TypeError) {
+    console.log("Type:", err.message);
+  } else {
+    console.log("Generic:", err.message);  // err is Error
+  }
+}
+```
+
+---
+
+#### 6. Discriminated union (tagged union) narrowing
+
+When every member of a union has a **common property with a literal type** (e.g. `kind: "success"`), that property is the **discriminant**. Switching on it narrows the whole object.
+
+```ts
+type Loading = { status: "loading" };
+type Success = { status: "success"; data: string };
+type Error = { status: "error"; message: string };
+type State = Loading | Success | Error;
+
+function render(state: State) {
+  switch (state.status) {
+    case "loading":
+      return "Loading...";            // state is Loading
+    case "success":
+      return state.data;              // state is Success
+    case "error":
+      return state.message;           // state is Error
+  }
+}
+```
+
+Works with **nested** discriminants too:
+
+```ts
+type Result<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
+
+function unwrap<T>(r: Result<T>): T {
+  if (r.ok) {
+    return r.value;                   // r is { ok: true; value: T }
+  }
+  throw new Error(r.error);           // r is { ok: false; error: string }
+}
+```
+
+---
+
+#### 7. Control flow and narrowing scope
+
+Narrowing is **block-scoped**. Inside the `if` block the variable is narrowed; after the block it goes back to the original type (unless you assigned something new).
+
+```ts
+function demo(x: string | null) {
+  if (x === null) return;
+  console.log(x.length);               // x is string here (inside block)
+
+  setTimeout(() => {
+    console.log(x.length);            // still string — closure captures narrowed usage
+  }, 100);
+
+  // Here x is still string because we didn't leave the function and reassign
+}
+```
+
+**Early return** narrows for the rest of the function:
+
+```ts
+function process(id: string | number) {
+  if (typeof id === "number") {
+    return id.toFixed(0);             // id is number, then we return
+  }
+  return id.toUpperCase();            // id is string (number case already returned)
+}
+```
+
+**Ternary** narrows in each branch:
+
+```ts
+function label(value: string | number) {
+  return typeof value === "string" ? value.toUpperCase() : value.toFixed(2);
+}
+```
+
+---
+
+#### 8. Array narrowing with `Array.isArray`
+
+TypeScript treats `Array.isArray(x)` as a type guard: in the true branch, `x` is an array.
+
+```ts
+function flatten(input: string | string[]) {
+  if (Array.isArray(input)) {
+    return input.join("");            // input is string[]
+  }
+  return input;                       // input is string
+}
+```
+
+---
+
+#### 9. Narrowing with type predicates (`is`)
+
+Custom guards use **`arg is Type`** so that in the branch where the function returns true, the argument is narrowed. This is the main way to get narrowing for **complex** checks (e.g. parsing or API shapes).
+
+```ts
+function isNumberArray(val: unknown): val is number[] {
+  return Array.isArray(val) && val.every((e) => typeof e === "number");
+}
+
+const raw: unknown = [1, 2, 3];
+if (isNumberArray(raw)) {
+  const sum = raw.reduce((a, b) => a + b, 0);  // raw is number[]
+}
+```
+
+---
+
 ### Q: What is type narrowing? Why do we need it?
 
 **Answer:** When a variable has a union type (e.g. `string | number`), you can only use operations that are valid for **all** members of the union. To use string-only or number-only operations, you must **narrow** the type in a branch. TypeScript does this by analyzing control flow: after a check that rules out some cases, it narrows the type in the remaining branch.

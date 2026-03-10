@@ -40,7 +40,62 @@ function process(value: string | number) {
   return value.toFixed(2); // narrowed to number
 }
 
-// ----- 2.2 Custom type guard: "arg is Type" (type predicate) -----
+// typeof with multiple primitives
+function handlePrimitive(value: string | number | boolean) {
+  if (typeof value === "string") return value.padStart(2);
+  if (typeof value === "number") return value.toFixed(2);
+  return value.valueOf(); // boolean
+}
+
+// CAUTION: typeof null === "object" — use === null to exclude null
+function badNullCheck(x: string | null) {
+  if (typeof x === "object") return; // x is still string | null!
+  // console.log(x.length); // Error
+}
+function goodNullCheck(x: string | null) {
+  if (x === null) return;
+  console.log(x.length); // x is string
+}
+
+// Literal narrowing via equality
+function theme(mode: "light" | "dark" | "auto") {
+  if (mode === "auto") return getSystemTheme();
+  return mode; // "light" | "dark"
+}
+declare function getSystemTheme(): string;
+
+// ----- 2.2 Equality narrowing -----
+function equalityExample(x: string | null | undefined) {
+  if (x === null) return "null";
+  if (x === undefined) return "undefined";
+  return x.toUpperCase(); // x is string
+}
+
+// == null catches both null and undefined
+function nullishCheck(x: string | null | undefined) {
+  if (x == null) return "";
+  return x.toUpperCase();
+}
+
+// Literal union narrowing
+function direction(x: "up" | "down" | "left" | "right") {
+  if (x === "up" || x === "down") return "vertical";
+  return "horizontal"; // "left" | "right"
+}
+
+// ----- 2.3 Truthiness narrowing (watch out for 0 and "") -----
+function printLength(str: string | null | undefined) {
+  if (!str) return; // narrows out "", null, undefined
+  console.log(str.length);
+}
+
+// Prefer explicit check when 0 is valid
+function count(value: number | null) {
+  if (value === null) return 0;
+  return value + 1; // 0 is still valid here
+}
+
+// ----- 2.4 Custom type guard: "arg is Type" (type predicate) -----
 // Return type must be "val is string", not boolean — otherwise no narrowing!
 function isString(val: unknown): val is string {
   return typeof val === "string";
@@ -53,7 +108,7 @@ function handle(val: string | number) {
   }
 }
 
-// ----- 2.3 Type guard for unknown (e.g. API / parsed data) -----
+// ----- 2.5 Type guard for unknown (e.g. API / parsed data) -----
 function isUser(obj: unknown): obj is { name: string; id: number } {
   return (
     typeof obj === "object" &&
@@ -70,7 +125,16 @@ if (isUser(apiData)) {
   console.log(apiData.name, apiData.id); // apiData narrowed to { name: string; id: number }
 }
 
-// ----- 2.4 Assertion type guard: "asserts arg is Type" -----
+// Type predicate for array of numbers
+function isNumberArray(val: unknown): val is number[] {
+  return Array.isArray(val) && val.every((e) => typeof e === "number");
+}
+const raw: unknown = [1, 2, 3];
+if (isNumberArray(raw)) {
+  const sum = raw.reduce((a, b) => a + b, 0); // raw is number[]
+}
+
+// ----- 2.6 Assertion type guard: "asserts arg is Type" -----
 // If function returns, arg is Type; otherwise it should throw.
 function assertIsString(val: unknown): asserts val is string {
   if (typeof val !== "string") throw new Error("Expected string");
@@ -79,7 +143,7 @@ let mixed: string | number = 42;
 assertIsString(mixed); // after this, mixed is string (or we threw)
 // console.log(mixed.length); // would be valid if we didn't throw above
 
-// ----- 2.5 "in" narrowing -----
+// ----- 2.7 "in" narrowing -----
 type Fish = { swim: () => void };
 type Bird = { fly: () => void };
 function move(animal: Fish | Bird) {
@@ -90,17 +154,22 @@ function move(animal: Fish | Bird) {
   }
 }
 
-// ----- 2.6 Equality and truthiness -----
+// in with optional property
+type WithOptional = { required: number; optional?: string };
+type WithoutOptional = { required: number };
+function useInOptional(x: WithOptional | WithoutOptional) {
+  if ("optional" in x) {
+    console.log(x.optional ?? ""); // x narrowed by presence of optional
+  }
+}
+
+// ----- 2.8 Equality and truthiness (see 2.2, 2.3 for more) -----
 function format(str: string | null | undefined): string {
   if (str == null) return ""; // narrows out null and undefined
   return str.toUpperCase();
 }
-function printLength(str: string | null) {
-  if (!str) return; // narrows out "", null, undefined
-  console.log(str.length);
-}
 
-// ----- 2.7 instanceof narrowing -----
+// ----- 2.9 instanceof narrowing -----
 function handleEvent(e: Date | Error) {
   if (e instanceof Date) {
     console.log(e.toISOString());
@@ -109,13 +178,33 @@ function handleEvent(e: Date | Error) {
   }
 }
 
-// ----- 2.8 Control flow: early return narrows in remaining branch -----
+// Multiple instanceof
+function handleErr(err: Error | TypeError | RangeError) {
+  if (err instanceof RangeError) return "range";
+  if (err instanceof TypeError) return "type";
+  return "generic"; // Error
+}
+
+// ----- 2.10 Array.isArray narrowing -----
+function flatten(input: string | string[]) {
+  if (Array.isArray(input)) {
+    return input.join(""); // input is string[]
+  }
+  return input; // input is string
+}
+
+// ----- 2.11 Control flow: early return narrows in remaining branch -----
 function example(x: string | null) {
   if (x === null) return;
   console.log(x.toUpperCase()); // x is string here
 }
 
-// ----- 2.9 Discriminated union (tagged union) + exhaustiveness -----
+function processId(id: string | number) {
+  if (typeof id === "number") return id.toFixed(0);
+  return id.toUpperCase(); // id is string
+}
+
+// ----- 2.12 Discriminated union (tagged union) + exhaustiveness -----
 type Success = { kind: "success"; data: string };
 type Err = { kind: "error"; message: string };
 type Result = Success | Err;
@@ -130,6 +219,14 @@ function handleResult(r: Result) {
       break;
   }
 }
+
+// Nested discriminant (Result<T> pattern)
+type ResultT<T> = { ok: true; value: T } | { ok: false; error: string };
+function unwrap<T>(r: ResultT<T>): T {
+  if (r.ok) return r.value;
+  throw new Error(r.error);
+}
+
 // Exhaustiveness check: default with never fails if you add a new variant
 function handleExhaustive(r: Result): string {
   switch (r.kind) {
