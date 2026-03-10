@@ -29,7 +29,10 @@ type Admin = User & { role: "admin" };
 // ============================================
 // 2. TYPE NARROWING & TYPE GUARDS
 // ============================================
+// Type narrowing = TypeScript infers a more specific type inside a branch.
+// Type guards = expressions or functions that trigger that narrowing.
 
+// ----- 2.1 typeof narrowing -----
 function process(value: string | number) {
   if (typeof value === "string") {
     return value.toUpperCase(); // narrowed to string
@@ -37,17 +40,46 @@ function process(value: string | number) {
   return value.toFixed(2); // narrowed to number
 }
 
-// Custom type guard: function that returns "arg is Type"
+// ----- 2.2 Custom type guard: "arg is Type" (type predicate) -----
+// Return type must be "val is string", not boolean — otherwise no narrowing!
 function isString(val: unknown): val is string {
   return typeof val === "string";
 }
 function handle(val: string | number) {
   if (isString(val)) {
     console.log(val.length); // string
+  } else {
+    console.log(val.toFixed(2)); // number
   }
 }
 
-// "in" narrowing
+// ----- 2.3 Type guard for unknown (e.g. API / parsed data) -----
+function isUser(obj: unknown): obj is { name: string; id: number } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "name" in obj &&
+    "id" in obj &&
+    typeof (obj as { name: unknown }).name === "string" &&
+    typeof (obj as { id: unknown }).id === "number"
+  );
+}
+declare function getFromAPI(): unknown;
+const apiData = getFromAPI();
+if (isUser(apiData)) {
+  console.log(apiData.name, apiData.id); // apiData narrowed to { name: string; id: number }
+}
+
+// ----- 2.4 Assertion type guard: "asserts arg is Type" -----
+// If function returns, arg is Type; otherwise it should throw.
+function assertIsString(val: unknown): asserts val is string {
+  if (typeof val !== "string") throw new Error("Expected string");
+}
+let mixed: string | number = 42;
+assertIsString(mixed); // after this, mixed is string (or we threw)
+// console.log(mixed.length); // would be valid if we didn't throw above
+
+// ----- 2.5 "in" narrowing -----
 type Fish = { swim: () => void };
 type Bird = { fly: () => void };
 function move(animal: Fish | Bird) {
@@ -58,10 +90,57 @@ function move(animal: Fish | Bird) {
   }
 }
 
-// Truthiness / null checks
-function print(str: string | null) {
-  if (str) {
-    console.log(str.toUpperCase());
+// ----- 2.6 Equality and truthiness -----
+function format(str: string | null | undefined): string {
+  if (str == null) return ""; // narrows out null and undefined
+  return str.toUpperCase();
+}
+function printLength(str: string | null) {
+  if (!str) return; // narrows out "", null, undefined
+  console.log(str.length);
+}
+
+// ----- 2.7 instanceof narrowing -----
+function handleEvent(e: Date | Error) {
+  if (e instanceof Date) {
+    console.log(e.toISOString());
+  } else {
+    console.log(e.message);
+  }
+}
+
+// ----- 2.8 Control flow: early return narrows in remaining branch -----
+function example(x: string | null) {
+  if (x === null) return;
+  console.log(x.toUpperCase()); // x is string here
+}
+
+// ----- 2.9 Discriminated union (tagged union) + exhaustiveness -----
+type Success = { kind: "success"; data: string };
+type Err = { kind: "error"; message: string };
+type Result = Success | Err;
+
+function handleResult(r: Result) {
+  switch (r.kind) {
+    case "success":
+      console.log(r.data);
+      break;
+    case "error":
+      console.log(r.message);
+      break;
+  }
+}
+// Exhaustiveness check: default with never fails if you add a new variant
+function handleExhaustive(r: Result): string {
+  switch (r.kind) {
+    case "success":
+      return r.data;
+    case "error":
+      return r.message;
+    default: {
+      const _: never = r;
+      return _;
+    }
   }
 }
 
@@ -77,21 +156,7 @@ type AandB = A & B;  // has a AND b
 const u: AorB = { a: 1 };      // ok
 const i: AandB = { a: 1, b: "x" }; // ok
 
-// Discriminated union (tagged union) — great for state/events
-type Success = { kind: "success"; data: string };
-type Err = { kind: "error"; message: string };
-type Result = Success | Err;
-
-function handleResult(r: Result) {
-  switch (r.kind) {
-    case "success":
-      console.log(r.data);
-      break;
-    case "error":
-      console.log(r.message);
-      break;
-  }
-}
+// Discriminated union example — see section 2.9 for full narrowing + exhaustiveness
 
 // ============================================
 // 4. GENERICS (Quick recap — see typescript-generics-guide.ts for full)

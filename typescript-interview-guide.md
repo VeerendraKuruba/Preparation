@@ -82,52 +82,250 @@ You cannot write `interface Result = Success | Failure`.
 
 ## Type narrowing & type guards
 
-### Q: What is type narrowing? Give examples.
+**Type narrowing** means TypeScript infers a **more specific type** inside a branch of code (e.g. after an `if` or `switch`), so you can safely use properties or methods that exist only on that type. **Type guards** are expressions or functions that trigger this narrowing.
 
-**Answer:** Type narrowing is when TypeScript infers a more specific type inside a branch (e.g. after an `if`), so you can safely use that type.
+---
 
-Examples: `typeof`, `instanceof`, equality checks, truthiness, and custom type guards.
+### Q: What is type narrowing? Why do we need it?
+
+**Answer:** When a variable has a union type (e.g. `string | number`), you can only use operations that are valid for **all** members of the union. To use string-only or number-only operations, you must **narrow** the type in a branch. TypeScript does this by analyzing control flow: after a check that rules out some cases, it narrows the type in the remaining branch.
+
+**Without narrowing:** TypeScript will error because it doesn’t know which branch you’re in.
 
 ```ts
-function example(value: string | number) {
-  if (typeof value === "string") {
-    return value.toUpperCase();  // narrowed to string
+function printId(id: string | number) {
+  console.log(id.toUpperCase());  // Error: number doesn't have toUpperCase
+}
+```
+
+**With narrowing:** Inside the `if (typeof id === "string")` block, `id` is narrowed to `string`.
+
+```ts
+function printId(id: string | number) {
+  if (typeof id === "string") {
+    console.log(id.toUpperCase());  // OK — id is string here
+  } else {
+    console.log(id.toFixed(2));     // OK — id is number here
   }
-  return value.toFixed(2);       // narrowed to number
 }
 ```
 
 ---
 
-### Q: What is a type guard? How do you write one?
+### Q: What are the built-in ways to narrow types?
 
-**Answer:** A type guard is a function whose return type is `arg is Type`. If it returns `true`, TypeScript narrows the argument to that type.
+**Answer:** TypeScript narrows based on these patterns:
+
+| Method | Example | What gets narrowed |
+|--------|---------|--------------------|
+| **`typeof`** | `typeof x === "string"` | Primitives: `string`, `number`, `boolean`, `symbol`, `undefined`, `function`, `object` (note: `typeof null === "object"`) |
+| **`instanceof`** | `x instanceof Date` | Class instances (constructor in prototype chain) |
+| **Equality** | `x === null`, `x === undefined`, `x == null` | `null` / `undefined` (use `== null` to catch both) |
+| **Truthiness** | `if (x)` / `if (!x)` | Truthy/falsy; excludes `0`, `""`, `false`, `null`, `undefined`, `NaN` from truthy branch |
+| **`in`** | `"swim" in animal` | Object types that have or lack a property |
+| **Discriminated union** | `switch (obj.kind)` with literal `kind` | Union members by their discriminant property |
+
+**Example — equality and truthiness:**
+
+```ts
+function format(str: string | null | undefined) {
+  if (str == null) return "";   // narrows out null and undefined
+  return str.toUpperCase();      // str is string here
+}
+
+function printLength(str: string | null) {
+  if (!str) return;              // narrows out "", null, undefined
+  console.log(str.length);       // str is string (non-empty in truthy branch)
+}
+```
+
+**Example — `instanceof`:**
+
+```ts
+function handle(e: Date | Error) {
+  if (e instanceof Date) {
+    console.log(e.toISOString());
+  } else {
+    console.log(e.message);       // e is Error
+  }
+}
+```
+
+**Important:** Truthiness narrowing can be surprising: `if (x)` excludes `0` and `""` from the branch. For “is it null/undefined?” prefer `x == null` or `x === null || x === undefined`.
+
+---
+
+### Q: What is a type guard? How do you write a custom one?
+
+**Answer:** A **type guard** is a function that returns a **boolean** and has a return type of the form **`arg is Type`** (a “type predicate”). If the function returns `true`, TypeScript narrows the argument to `Type` at the call site. This lets you reuse complex checks and keep narrowing in a type-safe way.
+
+**Syntax:** `function guard(value: UnknownType): value is NarrowType { ... }`
 
 ```ts
 function isString(val: unknown): val is string {
   return typeof val === "string";
 }
-function handle(val: string | number) {
-  if (isString(val)) {
-    console.log(val.length);  // val is string here
+
+function process(input: string | number) {
+  if (isString(input)) {
+    console.log(input.toUpperCase());  // input is string
+  } else {
+    console.log(input.toFixed(2));      // input is number
   }
 }
+```
+
+**Type guards with `unknown`:** Very useful for parsing or API data. After the guard, you can use the value safely.
+
+```ts
+function isUser(obj: unknown): obj is { name: string; id: number } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "name" in obj &&
+    "id" in obj &&
+    typeof (obj as { name: unknown }).name === "string" &&
+    typeof (obj as { id: unknown }).id === "number"
+  );
+}
+
+const data: unknown = getFromAPI();
+if (isUser(data)) {
+  console.log(data.name, data.id);  // data is { name: string; id: number }
+}
+```
+
+**Common mistake:** The return type must be `value is Type`. If you write `boolean`, TypeScript will not narrow.
+
+```ts
+function isStringBad(val: unknown): boolean {
+  return typeof val === "string";
+}
+let x: string | number = getValue();
+if (isStringBad(x)) {
+  console.log(x.toUpperCase());  // Error — x is still string | number
+}
+```
+
+---
+
+### Q: What is an assertion type guard (`asserts arg is Type`)?
+
+**Answer:** An **assertion function** is one that returns `asserts arg is Type`. It doesn’t return a boolean; it tells TypeScript “if this function returns, then `arg` is of type `Type`.” If the condition fails, the function should throw (or never return). Useful for validation that throws on invalid input.
+
+```ts
+function assertIsString(val: unknown): asserts val is string {
+  if (typeof val !== "string") {
+    throw new Error("Expected a string");
+  }
+}
+
+let x: string | number = getValue();
+assertIsString(x);   // after this line, x is string (or we threw)
+console.log(x.length);
 ```
 
 ---
 
 ### Q: How do you narrow with the `in` operator?
 
-**Answer:** Use `"prop" in obj` to discriminate between object types that have different properties.
+**Answer:** Use **`"property" in obj`** to discriminate between object types that have different properties. TypeScript narrows based on the presence or absence of that property.
 
 ```ts
 type Fish = { swim: () => void };
 type Bird = { fly: () => void };
+
 function move(animal: Fish | Bird) {
-  if ("swim" in animal) animal.swim();
-  else animal.fly();
+  if ("swim" in animal) {
+    animal.swim();   // animal is Fish
+  } else {
+    animal.fly();    // animal is Bird
+  }
 }
 ```
+
+Use this when union members are object types with different keys. Prefer a **discriminated union** (a common literal property like `kind`) when you can, because it’s easier to extend and exhaust in a `switch`.
+
+---
+
+### Q: What is control flow analysis? Does narrowing work in all branches?
+
+**Answer:** **Control flow analysis** is how TypeScript tracks the type of a variable as it flows through conditionals, returns, and throws. Narrowing applies in the branch where the condition is true (and the opposite in `else`). After a `return` or `throw`, TypeScript knows that code below doesn’t run, so it can narrow in the remaining branch.
+
+```ts
+function example(x: string | null) {
+  if (x === null) return;
+  // x is string here — we returned in the null case
+  console.log(x.toUpperCase());
+}
+```
+
+Narrowing is **block-scoped**: inside an `if` block the variable is narrowed; after the block, it goes back to the original union unless you assigned a new value. TypeScript also tracks narrowing for **assignments** (e.g. after `x = "hello"`, it may narrow `x` to a literal in some cases).
+
+---
+
+### Q: How do discriminated unions improve narrowing?
+
+**Answer:** A **discriminated union** has a common property (the “discriminant”) with a **literal type** (e.g. `kind: "success" | "error"`). When you `switch` (or `if`) on that property, TypeScript narrows the whole object to the corresponding union member, so you get full type safety and autocomplete for each case.
+
+```ts
+type Success = { kind: "success"; data: string };
+type Failure = { kind: "error"; message: string };
+type Result = Success | Failure;
+
+function handle(r: Result) {
+  switch (r.kind) {
+    case "success":
+      console.log(r.data);    // r is Success
+      break;
+    case "error":
+      console.log(r.message); // r is Failure
+      break;
+  }
+}
+```
+
+You can add exhaustiveness checking with `never`: if you add a new variant and forget a `case`, the `default` branch will show a type error.
+
+```ts
+function handleExhaustive(r: Result) {
+  switch (r.kind) {
+    case "success": return r.data;
+    case "error":   return r.message;
+    default: {
+      const _: never = r;  // Error if you add a new variant and don't handle it
+      return _;
+    }
+  }
+}
+```
+
+---
+
+### Q: What pitfalls should you watch with type narrowing?
+
+**Answer:**
+
+1. **Truthiness and `0` / `""`:** `if (x)` narrows out `0`, `""`, and `false`. If those are valid values, use explicit checks (`x !== null && x !== undefined`) or equality (`x != null`).
+2. **`typeof null === "object"`:** So `typeof x === "object"` does not exclude `null`. Check `x !== null` (or use `in`/discriminated unions for objects).
+3. **Type guard must return `arg is Type`:** Returning `boolean` does not narrow.
+4. **Narrowing is per variable:** If you narrow `a` and then assign `a` to `b`, `b` might not get the same narrow type unless the compiler can track it.
+5. **Mutable aliases:** If you narrow `x` and then pass `x` to a function that might mutate it or if another reference is mutated, the type can be “stale”; TypeScript assumes you don’t mutate in between. Keep narrowing local and avoid mutating narrowed values in tricky ways.
+
+---
+
+### Quick reference: narrowing and guards
+
+| Pattern | Purpose |
+|--------|---------|
+| `typeof x === "string"` | Narrow primitives |
+| `x instanceof Date` | Narrow class instances |
+| `x == null` / `x === undefined` | Narrow out null/undefined |
+| `"key" in x` | Narrow object types by property |
+| `if (x)` / `if (!x)` | Truthiness (watch out for 0 and "") |
+| `switch (obj.kind)` on literal | Discriminated union narrowing |
+| `function f(x): x is T` | Custom type guard |
+| `function f(x): asserts x is T` | Assertion guard (throws on failure) |
 
 ---
 
