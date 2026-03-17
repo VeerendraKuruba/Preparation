@@ -2,6 +2,31 @@
 
 A **linked list** is a linear data structure where elements are stored in nodes. Each node contains a **value** and a **pointer** (reference) to the next node. Unlike arrays, linked list elements are not stored in contiguous memory.
 
+### What does "contiguous memory" mean?
+
+**Contiguous** = "next to each other, with no gaps."
+
+- **Arrays:** The computer reserves one **block of consecutive memory addresses** for all elements. So if the array starts at address 1000 and each element is 4 bytes, the first element is at 1000, the second at 1004, the third at 1008, etc. They sit **side by side** in memory.
+
+  ```
+  Memory (array):   [ 1 ][ 2 ][ 3 ][ 4 ]   ← one continuous block
+  Addresses:        1000 1004 1008 1012
+  ```
+
+- **Linked list:** Each node is allocated **separately** (e.g. with `new Node()`). The first node might be at 1000, the second at 5000, the third at 200. They are **not** next to each other—they can be anywhere in memory. The only "order" is the **pointers**: node₁ points to node₂, node₂ points to node₃.
+
+  ```
+  Memory (linked list):
+  Address 1000: [ 1 | next ──────────────┐
+  Address 5000: [ 2 | next ──────┐       │
+  Address 200:  [ 3 | next → null       │
+                 ▲                      │
+                 └──────────────────────┘
+  (Logical order: 1 → 2 → 3, but physically scattered)
+  ```
+
+So **"not stored in contiguous memory"** means: the elements of a linked list do **not** sit in one consecutive block; they can be scattered, and the list order is maintained only by following the `next` pointers.
+
 ---
 
 ## Why Linked Lists?
