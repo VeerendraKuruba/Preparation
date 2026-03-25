@@ -40,6 +40,10 @@ Notes for rounds where you **design a web client** (not backend-heavy distribute
 - [Google Maps zoom (frontend)](./google-maps-zoom-frontend.md) — tile pyramid, gestures, scheduling, caching, rendering trade-offs.
 - [Airbnb Design Language System (DLS)](./airbnb-design-system.md) — principles, multi-platform mapping, governance, interview framing, references.
 - [Scalable homepage](./scalable-homepage/homepage-millions-users.md) — shell vs dynamic blocks, CDN/caching, origin/personalization, reliability, observability.
+- [Instagram (frontend)](./instagram-frontend-design.md) — feed, Stories, Reels, DMs, media pipeline, virtualization, real-time.
+- [Scalable chat UI](./scalable-chat-ui-design.md) — WebSocket transport, cursor history, optimistic send, virtualization, presence.
+- [Twitter / X–like feed](./twitter-like-feed-frontend.md) — ranked timeline, pagination, realtime merge, compose & threads.
+- [Zomato (frontend)](./zomato-frontend-design.md) — discovery, map + list, menu/cart/checkout, low-network performance.
 - [Frontend system design round](./system-design-round/README.md) — **Q1–Q12** (e‑commerce filters/listing, **real-time dashboard**, **offline-first**, …); topic finder in index. ([Old combined file stub →](./faang-top-tier-frontend-system-design-answers.md))
 
 ## Code & machine-coding (same repo folder)

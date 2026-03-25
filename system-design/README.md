@@ -8,7 +8,7 @@ Everything for **frontend system design**, **live coding (JS/JSX)**, and **perfo
 |--------|------|----------|
 | **Frontend system design (deep dives + Q&A)** | [`frontend/`](./frontend/) | Micro-frontends, maps, DLS, scalable homepage, **Q1–Q12** round (`system-design-round/`), topic index in [`frontend/README.md`](./frontend/README.md). |
 | **React UI drills (~45 min)** | [`react-hands-on-45min/`](./react-hands-on-45min/) | Accordion, modal, tabs, carousel, todo, timer, virtual list, etc. — `.jsx` samples + `index.js`. |
-| **Machine coding + perf + short system-design briefs** | [`interview-prep/`](./interview-prep/) | JS utilities (debounce, promise.all, …), React patterns (modal system, toast, data table, …), performance notes, topics 22–29 briefs. Start at [`interview-prep/README.md`](./interview-prep/README.md). |
+| **Machine coding + perf + architecture briefs** | [`interview-prep/`](./interview-prep/) | JS/JSX drills, performance 16–21, system-design 22–29, **scalability & architecture 36–40**. Start at [`interview-prep/README.md`](./interview-prep/README.md). |
 
 ## Quick entry points
 

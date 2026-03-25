@@ -6,6 +6,7 @@
 | React machine coding (9–15) | [`react-machine-coding/`](./react-machine-coding/) | JSX |
 | Performance engineering (16–21) | [`performance-engineering/`](./performance-engineering/) | Markdown |
 | Frontend system design (22–29) | [`frontend-system-design/`](./frontend-system-design/) | Markdown |
+| Scalability & architecture (36–40) | [`scalability-architecture/`](./scalability-architecture/) | Markdown |
 
 ## Editor / tooling
 
