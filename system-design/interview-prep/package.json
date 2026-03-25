@@ -1,0 +1,9 @@
+{
+  "name": "interview-prep",
+  "private": true,
+  "description": "JS + JSX machine-coding samples; performance & system-design notes.",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}

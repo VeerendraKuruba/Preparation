@@ -1,5 +1,7 @@
 # Frontend system design (interview prep)
 
+ [← **Parent: all prep in one folder**](../README.md)
+
 Notes for rounds where you **design a web client** (not backend-heavy distributed systems). Interviewers care about **user experience, performance, accessibility, maintainability, and how the UI integrates** with APIs and other teams.
 
 ## How to structure your answer (5–10 minutes)
@@ -39,5 +41,10 @@ Notes for rounds where you **design a web client** (not backend-heavy distribute
 - [Airbnb Design Language System (DLS)](./airbnb-design-system.md) — principles, multi-platform mapping, governance, interview framing, references.
 - [Scalable homepage](./scalable-homepage/homepage-millions-users.md) — shell vs dynamic blocks, CDN/caching, origin/personalization, reliability, observability.
 - [Frontend system design round](./system-design-round/README.md) — **Q1–Q12** (e‑commerce filters/listing, **real-time dashboard**, **offline-first**, …); topic finder in index. ([Old combined file stub →](./faang-top-tier-frontend-system-design-answers.md))
+
+## Code & machine-coding (same repo folder)
+
+- [React hands-on drills (~45 min)](../react-hands-on-45min/) — JSX components (virtual list, forms, …).
+- [Interview prep: JS + JSX + perf + briefs](../interview-prep/) — debounce, tables, modals, system-design one-pagers.
 
 Add new topics here as separate markdown files (e.g. `design-system.md`, `real-time-frontend.md`) when you extend your prep.

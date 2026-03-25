@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "checkJs": true,
+    "target": "ES2022"
+  },
+  "include": ["javascript-machine-coding/**/*.js", "react-machine-coding/**/*.jsx", "react-machine-coding/**/*.js"]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "react-hands-on-45min",
+  "private": true,
+  "description": "Interview-style React examples (JSX) — copy into your app.",
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}
