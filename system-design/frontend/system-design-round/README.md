@@ -4,6 +4,14 @@ FAANG and top-tier **frontend system design** prep. Each linked file is **one qu
 
 **Related:** [Frontend prep hub](../README.md) · [Micro frontends](../micro-frontends.md) · [Google Maps zoom](../google-maps-zoom-frontend.md) · [Scalable homepage](../scalable-homepage/homepage-millions-users.md) · [Airbnb DLS](../airbnb-design-system.md)
 
+### Topic finder
+
+| You’re prepping | Start here |
+|-----------------|------------|
+| **E-commerce** (filters, listing scale, PLP/PDP, cart) | [Q6](./q06-ecommerce-plp-pdp-cart.md) — see **Filters & listing at scale** |
+| **Real-time dashboard** | [Q11](./q11-real-time-dashboard.md) |
+| **Offline-first** (SW, IDB, outbox, sync) | [Q12](./q12-offline-first-app.md) |
+
 ---
 
 ## ~60 minute interview — how to use these notes
@@ -67,7 +75,7 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 
 ---
 
-## Questions (Q1–Q10)
+## Questions (Q1–Q12)
 
 | # | Topic | File |
 |---|--------|------|
@@ -76,11 +84,13 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | Q3 | Web chat / DMs | [q03-web-chat-dms.md](./q03-web-chat-dms.md) |
 | Q4 | Video watch page / player | [q04-video-watch-player.md](./q04-video-watch-player.md) |
 | Q5 | Maps-heavy UI (markers, clustering) | [q05-maps-markers-clustering.md](./q05-maps-markers-clustering.md) |
-| Q6 | E-commerce PLP → PDP → cart | [q06-ecommerce-plp-pdp-cart.md](./q06-ecommerce-plp-pdp-cart.md) |
+| Q6 | E-commerce (filters, listing scale, PLP, PDP, cart) | [q06-ecommerce-plp-pdp-cart.md](./q06-ecommerce-plp-pdp-cart.md) |
 | Q7 | B2B dashboard (tables, RBAC) | [q07-b2b-dashboard-rbac.md](./q07-b2b-dashboard-rbac.md) |
 | Q8 | Collaborative editor (docs-lite) | [q08-collaborative-editor-docs-lite.md](./q08-collaborative-editor-docs-lite.md) |
 | Q9 | Design system / frontend platform | [q09-design-system-frontend-platform.md](./q09-design-system-frontend-platform.md) |
 | Q10 | Global shell / homepage (scale) | [q10-global-shell-homepage.md](./q10-global-shell-homepage.md) |
+| Q11 | Real-time dashboard (live metrics) | [q11-real-time-dashboard.md](./q11-real-time-dashboard.md) |
+| Q12 | Offline-first app (SW, IDB, outbox) | [q12-offline-first-app.md](./q12-offline-first-app.md) |
 
 ---
 
@@ -99,8 +109,9 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | **Stripe / Square** | RBAC dashboards, correctness |
 | **ByteDance / TikTok** | Feed/media, low-end devices |
 | **Spotify** | Playback + browse continuity |
-| **Shopify** | Extensibility, merchant flows |
-| **Bloomberg** | Dense tables, keyboard |
+| **Shopify** | Extensibility, merchant flows, **PLP filters** |
+| **Bloomberg** | Dense tables, keyboard, **live** ticks |
+| **Observability vendors** (Datadog-style angle) | High-cardinality caution UX, **pause** live, chart perf |
 
 ---
 
@@ -112,6 +123,8 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | Chat | WS + list + reconnect | Threads, search |
 | Search | Debounce + cache + a11y | Personalization |
 | Dashboard | Main table + RBAC | Saved views, export |
+| Live dashboard | Snapshot + one multiplexed stream + rAF batching | Worker downsample, shared-tab connection |
+| Offline-first | Read cache + write outbox + idempotency | Background Sync, conflict merges, multi-tab locks |
 | Homepage | Shell + islands | Deeper edge personalization |
 
 ---
