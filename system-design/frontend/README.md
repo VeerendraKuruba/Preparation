@@ -35,5 +35,9 @@ Notes for rounds where you **design a web client** (not backend-heavy distribute
 ## Docs in this folder
 
 - [Micro frontends](./micro-frontends.md) — definition, integration patterns, small example, trade-offs, talking points.
+- [Google Maps zoom (frontend)](./google-maps-zoom-frontend.md) — tile pyramid, gestures, scheduling, caching, rendering trade-offs.
+- [Airbnb Design Language System (DLS)](./airbnb-design-system.md) — principles, multi-platform mapping, governance, interview framing, references.
+- [Scalable homepage](./scalable-homepage/homepage-millions-users.md) — shell vs dynamic blocks, CDN/caching, origin/personalization, reliability, observability.
+- [Frontend system design round](./system-design-round/README.md) — **Q1–Q10** in separate files; meta-framework, company emphasis, v1 vs later. ([Old combined file stub →](./faang-top-tier-frontend-system-design-answers.md))
 
 Add new topics here as separate markdown files (e.g. `design-system.md`, `real-time-frontend.md`) when you extend your prep.
