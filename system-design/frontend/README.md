@@ -2,7 +2,7 @@
 
 FAANG and top-tier **frontend system design** prep. Each linked file is **one question** with: **mental model → clarify → goals → architecture → mechanics → trade-offs → failures → a11y → summary**, plus **~60 min** material (**time boxes, whiteboard checklist, deep dives, follow-ups, metrics**).
 
-**Related:** [Frontend prep hub](../README.md) · [Micro frontends](../micro-frontends.md) · [Google Maps zoom](../google-maps-zoom-frontend.md) · [Scalable homepage](../scalable-homepage/homepage-millions-users.md) · [Airbnb DLS](../airbnb-design-system.md)
+**Related:** [Prep repository](../../README.md) · [System design hub](../README.md) · [Micro frontends](./micro-frontends.md) · [Google Maps zoom](./google-maps-zoom-frontend.md) · [Scalable homepage](./scalable-homepage/homepage-millions-users.md) · [Airbnb DLS](./airbnb-design-system.md) · [Performance](./performance-engineering/README.md) · [Scalability](./scalability-architecture/README.md)
 
 ### Topic finder
 
@@ -126,6 +126,38 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | Live dashboard | Snapshot + one multiplexed stream + rAF batching | Worker downsample, shared-tab connection |
 | Offline-first | Read cache + write outbox + idempotency | Background Sync, conflict merges, multi-tab locks |
 | Homepage | Shell + islands | Deeper edge personalization |
+
+---
+
+## Extended topics (beyond Q1–Q12)
+
+### Numbered deep dives (22–29)
+
+| # | Topic | File |
+|---|--------|------|
+| 22 | Scalable dashboard | [22-scalable-dashboard.md](./22-scalable-dashboard.md) |
+| 23 | Infinite scroll at huge scale | [23-infinite-scroll-millions-of-items.md](./23-infinite-scroll-millions-of-items.md) |
+| 24 | Real-time notification system | [24-real-time-notification-system.md](./24-real-time-notification-system.md) |
+| 25 | Frontend architecture for chat apps | [25-frontend-architecture-chat-apps.md](./25-frontend-architecture-chat-apps.md) |
+| 26 | Feature flag system | [26-feature-flag-system.md](./26-feature-flag-system.md) |
+| 27 | Client-side caching strategies | [27-client-side-caching-strategies.md](./27-client-side-caching-strategies.md) |
+| 28 | Analytics and event tracking pipeline | [28-analytics-event-tracking-pipeline.md](./28-analytics-event-tracking-pipeline.md) |
+| 29 | Error logging and monitoring | [29-error-logging-and-monitoring.md](./29-error-logging-and-monitoring.md) |
+
+### Product-style scenarios
+
+| Topic | File |
+|--------|------|
+| FAANG-style answer patterns | [faang-top-tier-frontend-system-design-answers.md](./faang-top-tier-frontend-system-design-answers.md) |
+| Instagram-style UI | [instagram-frontend-design.md](./instagram-frontend-design.md) |
+| Twitter-like feed | [twitter-like-feed-frontend.md](./twitter-like-feed-frontend.md) |
+| Zomato-style discovery | [zomato-frontend-design.md](./zomato-frontend-design.md) |
+| Scalable chat UI | [scalable-chat-ui-design.md](./scalable-chat-ui-design.md) |
+
+### Topic collections
+
+- [Performance engineering](./performance-engineering/README.md)
+- [Scalability architecture](./scalability-architecture/README.md)
 
 ---
 

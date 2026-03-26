@@ -2,6 +2,8 @@
 
 Simple Tic Tac Toe built with React and Vite.
 
+**Parent:** [React hands-on exercises](../README.md) · [Repository root](../../README.md)
+
 ## Run
 
 ```bash

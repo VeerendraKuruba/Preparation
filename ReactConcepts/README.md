@@ -1,5 +1,7 @@
 # React Concepts
 
+[← Interview prep (repository root)](../README.md)
+
 These are the areas where senior rounds are won or lost.
 
 ## 🗓️ DAY 1: Core Mechanics & Hooks
