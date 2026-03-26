@@ -1,54 +1,132 @@
-# Frontend system design (interview prep)
+# Frontend system design round — question index
 
- [← **Parent: all prep in one folder**](../README.md)
+FAANG and top-tier **frontend system design** prep. Each linked file is **one question** with: **mental model → clarify → goals → architecture → mechanics → trade-offs → failures → a11y → summary**, plus **~60 min** material (**time boxes, whiteboard checklist, deep dives, follow-ups, metrics**).
 
-Notes for rounds where you **design a web client** (not backend-heavy distributed systems). Interviewers care about **user experience, performance, accessibility, maintainability, and how the UI integrates** with APIs and other teams.
+**Related:** [Frontend prep hub](../README.md) · [Micro frontends](../micro-frontends.md) · [Google Maps zoom](../google-maps-zoom-frontend.md) · [Scalable homepage](../scalable-homepage/homepage-millions-users.md) · [Airbnb DLS](../airbnb-design-system.md)
 
-## How to structure your answer (5–10 minutes)
+### Topic finder
 
-1. **Clarify scope**  
-   Product type (dashboard, content site, real-time app)? Primary users and devices? Offline needs? SEO critical? Auth model (public, logged-in, B2B)?
+| You’re prepping | Start here |
+|-----------------|------------|
+| **E-commerce** (filters, listing scale, PLP/PDP, cart) | [Q6](./q06-ecommerce-plp-pdp-cart.md) — see **Filters & listing at scale** |
+| **Real-time dashboard** | [Q11](./q11-real-time-dashboard.md) |
+| **Offline-first** (SW, IDB, outbox, sync) | [Q12](./q12-offline-first-app.md) |
 
-2. **Non-functional requirements**  
-   Call out **latency** (TTI, LCP), **scale** (concurrent users, bundle size budget), **consistency** (design system), **accessibility** (WCAG), **security** (XSS, CSP, token storage).
+---
 
-3. **High-level diagram**  
-   Browser, CDN, BFF/API gateway (if any), services. Where **HTML is produced** (SSR, static, SPA shell) and where **state** lives.
+## ~60 minute interview — how to use these notes
 
-4. **Deep dive on 1–2 areas**  
-   Pick what matters for the prompt: routing, data fetching, caching, real-time, **micro frontends**, image/media, internationalization.
+A typical **frontend/system design** loop is **not** a 45-minute monologue. The hour is **dialogue + depth** somewhere. These files give you **enough topics** to go long; you still **pause for questions**.
 
-5. **Trade-offs and failure modes**  
-   What breaks first under load? How do you degrade gracefully? What would you simplify for v1?
+| Phase | Time (guide) | What you do |
+|-------|----------------|-------------|
+| Clarify & requirements | ~8–12 min | Ask scope questions; write **functional + non-functional** list on the board; agree on “MVP” vs nice-to-have. |
+| High-level design | ~12–18 min | **Boxes + arrows**: browser, rendering choice, CDN/BFF, main APIs, client state stores. Narrate **critical user path** once end-to-end. |
+| Deep dive × 2 | ~25–35 min total | Pick **two** areas the interviewer cares about (they often steer). Each deep dive: problem → approach → trade-off → failure mode. Use **Deep dives** sections in each Q file. |
+| Trade-offs, scale, wrap | ~8–12 min | Explicit **what you’d cut for v1**, **observability**, **a11y/security** one-liners, **minute summary**. |
 
-## Frontend angles interviewers probe
+**Reality check:** If you only recite bullets, you finish early. The **stretch** content is in **Deep dives** + **Follow-ups** + drawing **data structures** (lists, caches, state machines). Practice **one Q file out loud** with a 50-minute timer and let a friend interrupt you.
 
-| Area | What to mention |
-|------|------------------|
-| **Rendering** | SSR vs SSG vs CSR vs islands; hydration cost; streaming HTML |
-| **Routing** | Code splitting per route; deep links; auth guards |
-| **Data** | REST vs GraphQL; cache layers (HTTP, SWR/React Query, service worker) |
-| **State** | Server vs client state; URL as state; when global store is justified |
-| **Performance** | Bundle budget, lazy loading, images (lazy, responsive, CDN), prefetch |
-| **DX & scale** | Monorepo vs polyrepo; design system; **micro frontends** when many teams own UI |
-| **Observability** | RUM, Web Vitals, error boundaries, source maps |
-| **Security** | CSP, sanitization, cookie vs memory token trade-offs |
+---
 
-## Docs in this folder
+## How to use every round (meta-framework)
 
-- [Micro frontends](./micro-frontends.md) — definition, integration patterns, small example, trade-offs, talking points.
-- [Google Maps zoom (frontend)](./google-maps-zoom-frontend.md) — tile pyramid, gestures, scheduling, caching, rendering trade-offs.
-- [Airbnb Design Language System (DLS)](./airbnb-design-system.md) — principles, multi-platform mapping, governance, interview framing, references.
-- [Scalable homepage](./scalable-homepage/homepage-millions-users.md) — shell vs dynamic blocks, CDN/caching, origin/personalization, reliability, observability.
-- [Instagram (frontend)](./instagram-frontend-design.md) — feed, Stories, Reels, DMs, media pipeline, virtualization, real-time.
-- [Scalable chat UI](./scalable-chat-ui-design.md) — WebSocket transport, cursor history, optimistic send, virtualization, presence.
-- [Twitter / X–like feed](./twitter-like-feed-frontend.md) — ranked timeline, pagination, realtime merge, compose & threads.
-- [Zomato (frontend)](./zomato-frontend-design.md) — discovery, map + list, menu/cart/checkout, low-network performance.
-- [Frontend system design round](./system-design-round/README.md) — **Q1–Q12** (e‑commerce filters/listing, **real-time dashboard**, **offline-first**, …); topic finder in index. ([Old combined file stub →](./faang-top-tier-frontend-system-design-answers.md))
+### One-line mental model
 
-## Code & machine-coding (same repo folder)
+Design **what runs in the browser and at the edge**: HTML strategy, bundles, caching, client state, graceful degradation—not full backend schemas unless asked.
 
-- [React hands-on drills (~45 min)](../react-hands-on-45min/) — JSX components (virtual list, forms, …).
-- [Interview prep: JS + JSX + perf + briefs](../interview-prep/) — debounce, tables, modals, system-design one-pagers.
+### Clarify scope in the interview
 
-Add new topics here as separate markdown files (e.g. `design-system.md`, `real-time-frontend.md`) when you extend your prep.
+- **Users & devices:** mobile web, desktop, low-end hardware, regions.
+- **Auth:** anonymous, consumer logged-in, B2B **RBAC**.
+- **SEO:** public indexable routes vs app behind login.
+- **Realtime:** poll vs **SSE** vs **WebSocket**; staleness tolerance.
+- **Constraints:** offline, **WCAG**, RTL / i18n.
+
+### Goals & requirements (name a few explicitly)
+
+| Type | Examples |
+|------|----------|
+| Functional | Core user journeys on the whiteboard |
+| Latency | LCP, TTI, interaction ready |
+| Scale | Concurrent users, rows/items in one view |
+| Reliability | Timeouts, partial UI when a service fails |
+| Security | XSS, CSP, where tokens live |
+
+### High-level frontend architecture
+
+Browser (**SSG / SSR / CSR / islands**) → **CDN / BFF** → services. Mark **where HTML is produced**, **where cache sits**, and **source of truth**.
+
+### What you deep-dive (pick 1–2)
+
+Virtualization, HTTP/SWR caching, URL-as-state, streaming SSR, WebSockets, maps/tiles, images, micro-frontends.
+
+### Failure modes & degradation
+
+API slow/error, socket down, third-party script, bad deploy—each needs a **user-visible** fallback.
+
+### Accessibility checklist
+
+Keyboard paths, focus, semantics, motion preferences—**specific to the prompt**.
+
+### Minute summary (closing)
+
+Restate: **rendering strategy + data/caching + one risk** you mitigated.
+
+---
+
+## Questions (Q1–Q12)
+
+| # | Topic | File |
+|---|--------|------|
+| Q1 | Infinite feed / social timeline | [q01-infinite-feed-social-timeline.md](./q01-infinite-feed-social-timeline.md) |
+| Q2 | Search + typeahead / autocomplete | [q02-search-typeahead-autocomplete.md](./q02-search-typeahead-autocomplete.md) |
+| Q3 | Web chat / DMs | [q03-web-chat-dms.md](./q03-web-chat-dms.md) |
+| Q4 | Video watch page / player | [q04-video-watch-player.md](./q04-video-watch-player.md) |
+| Q5 | Maps-heavy UI (markers, clustering) | [q05-maps-markers-clustering.md](./q05-maps-markers-clustering.md) |
+| Q6 | E-commerce (filters, listing scale, PLP, PDP, cart) | [q06-ecommerce-plp-pdp-cart.md](./q06-ecommerce-plp-pdp-cart.md) |
+| Q7 | B2B dashboard (tables, RBAC) | [q07-b2b-dashboard-rbac.md](./q07-b2b-dashboard-rbac.md) |
+| Q8 | Collaborative editor (docs-lite) | [q08-collaborative-editor-docs-lite.md](./q08-collaborative-editor-docs-lite.md) |
+| Q9 | Design system / frontend platform | [q09-design-system-frontend-platform.md](./q09-design-system-frontend-platform.md) |
+| Q10 | Global shell / homepage (scale) | [q10-global-shell-homepage.md](./q10-global-shell-homepage.md) |
+| Q11 | Real-time dashboard (live metrics) | [q11-real-time-dashboard.md](./q11-real-time-dashboard.md) |
+| Q12 | Offline-first app (SW, IDB, outbox) | [q12-offline-first-app.md](./q12-offline-first-app.md) |
+
+---
+
+## Company emphasis (tailor the same question)
+
+| Company / bucket | Stress extra |
+|------------------|----------------|
+| **Meta** | Feed/composer scale, optimistic UI, measurement |
+| **Google** | Perf correctness, search, maps/media depth |
+| **Apple** | Motion, clarity, privacy, a11y |
+| **Amazon** | PLP/PDP SEO, cart correctness |
+| **Netflix** | Prefetch, device tiers, personalization UX |
+| **Microsoft** | Enterprise a11y, long-lived apps |
+| **Airbnb** | Browse/maps, images, i18n |
+| **Uber / Lyft** | Maps, live trip state, bad network |
+| **Stripe / Square** | RBAC dashboards, correctness |
+| **ByteDance / TikTok** | Feed/media, low-end devices |
+| **Spotify** | Playback + browse continuity |
+| **Shopify** | Extensibility, merchant flows, **PLP filters** |
+| **Bloomberg** | Dense tables, keyboard, **live** ticks |
+| **Observability vendors** (Datadog-style angle) | High-cardinality caution UX, **pause** live, chart perf |
+
+---
+
+## v1 vs later (cross-question)
+
+| Feature | v1 | Later |
+|---------|----|--------|
+| Feed | Virtualize + pagination | Ranking experiments, richer cards |
+| Chat | WS + list + reconnect | Threads, search |
+| Search | Debounce + cache + a11y | Personalization |
+| Dashboard | Main table + RBAC | Saved views, export |
+| Live dashboard | Snapshot + one multiplexed stream + rAF batching | Worker downsample, shared-tab connection |
+| Offline-first | Read cache + write outbox + idempotency | Background Sync, conflict merges, multi-tab locks |
+| Homepage | Shell + islands | Deeper edge personalization |
+
+---
+
+*Prep material—not leaked questions. Practice one **Q#** for **50–60 minutes** with interruptions (or two **deep dives** only for ~30 min).*
