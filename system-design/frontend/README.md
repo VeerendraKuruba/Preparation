@@ -153,6 +153,8 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | Twitter-like feed | [twitter-like-feed-frontend.md](./twitter-like-feed-frontend.md) |
 | Zomato-style discovery | [zomato-frontend-design.md](./zomato-frontend-design.md) |
 | Scalable chat UI | [scalable-chat-ui-design.md](./scalable-chat-ui-design.md) |
+| **Freshworks — Dynamic Role-Based Dashboard** (MFE + WS + Offline) | [freshworks-dynamic-role-based-dashboard.md](./freshworks-dynamic-role-based-dashboard.md) |
+| **Survey Form System** (schema-driven, conditional logic, offline draft, file upload) | [survey-form-system-design.md](./survey-form-system-design.md) |
 
 ### Topic collections
 
