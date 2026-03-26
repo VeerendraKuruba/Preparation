@@ -1,40 +1,94 @@
-# React hands-on (~45 minutes)
+# React Hands-on — 45 Min Coding Round Prep
 
-Standalone component exercises (mostly `.jsx`) for whiteboard-style or take-home practice. Uses a small local `package.json` if you want to wire them into an app.
+24 components organised as individual folders. Each folder has:
+- `index.jsx` — clean solution code with inline comments explaining the WHY
+- `README.md` — what to build, how to think about it, key concepts, interview Q&A
 
-## Exercises
+---
 
-| File | Topic |
-|------|--------|
-| [accordion.jsx](./accordion.jsx) | Accordion |
-| [dark-mode-theme.jsx](./dark-mode-theme.jsx) | Dark mode / theme |
-| [drag-and-drop.jsx](./drag-and-drop.jsx) | Drag and drop |
-| [file-explorer-ui.jsx](./file-explorer-ui.jsx) | File explorer UI |
-| [form-builder.jsx](./form-builder.jsx) | Form builder |
-| [image-carousel.jsx](./image-carousel.jsx) | Image carousel |
-| [infinite-scroll-list.jsx](./infinite-scroll-list.jsx) | Infinite scroll |
-| [modal.jsx](./modal.jsx) | Modal |
-| [multi-step-form.jsx](./multi-step-form.jsx) | Multi-step form |
-| [progress-bar.jsx](./progress-bar.jsx) | Progress bar |
-| [search-debounce-api.jsx](./search-debounce-api.jsx) | Search with debounce + API |
-| [shopping-cart-ui.jsx](./shopping-cart-ui.jsx) | Shopping cart |
-| [star-rating.jsx](./star-rating.jsx) | Star rating |
-| [stopwatch-timer.jsx](./stopwatch-timer.jsx) | Stopwatch / timer |
-| [tabs.jsx](./tabs.jsx) | Tabs |
-| [todo-app.jsx](./todo-app.jsx) | Todo app |
-| [virtualized-list.jsx](./virtualized-list.jsx) | Virtualized list |
-| [09-modal-system.jsx](./09-modal-system.jsx) | Modal system |
-| [10-toast-system.jsx](./10-toast-system.jsx) | Toast system |
-| [11-searchable-dropdown.jsx](./11-searchable-dropdown.jsx) | Searchable dropdown |
-| [12-multi-step-form-validation.jsx](./12-multi-step-form-validation.jsx) | Multi-step form + validation |
-| [13-data-table-sort-pagination.jsx](./13-data-table-sort-pagination.jsx) | Data table (sort, pagination) |
-| [14-file-upload-progress.jsx](./14-file-upload-progress.jsx) | File upload + progress |
-| [15-tabs-lazy-rendering.jsx](./15-tabs-lazy-rendering.jsx) | Tabs with lazy rendering |
+## How to use
 
-- [index.js](./index.js) — barrel / entry helper if present
+1. Open a folder's `README.md` first — understand the problem before coding
+2. Try to solve it yourself in 30–45 min
+3. Compare with `index.jsx` and check the interview Q&A at the bottom of the README
 
-## Mini app
+---
 
-- **[Tic Tac Toe](./tic-tac-toe/README.md)** — Vite + React; see that folder for `npm install` / `npm run dev`.
+## All 24 Components
 
-**Related:** [React concepts](../ReactConcepts/README.md) · [Frontend system design](../system-design/frontend/README.md) · [JavaScript machine coding](../javascript-machine-coding/README.md) · [Repository root](../README.md)
+### Basic UI (start here)
+
+| # | Folder | What it tests |
+|---|--------|---------------|
+| 01 | [01-progress-bar](./01-progress-bar/) | Pure/stateless component, derived value, ARIA |
+| 02 | [02-star-rating](./02-star-rating/) | Controlled component, hover vs committed state, `??` operator |
+| 03 | [03-accordion](./03-accordion/) | Set for open state, single vs multi mode, conditional render |
+| 04 | [04-tabs](./04-tabs/) | Roving tabIndex, keyboard navigation, ARIA tablist |
+| 05 | [05-modal](./05-modal/) | Portal, focus management, scroll lock, Escape key |
+
+### Forms
+
+| # | Folder | What it tests |
+|---|--------|---------------|
+| 06 | [06-multi-step-form](./06-multi-step-form/) | Step index, spread to preserve data across steps |
+| 07 | [07-form-builder](./07-form-builder/) | Data-driven UI, field config array, validate on submit |
+| 08 | [08-searchable-dropdown](./08-searchable-dropdown/) | Keyboard nav, ARIA combobox, blur-before-click fix |
+| 09 | [09-multi-step-form-validation](./09-multi-step-form-validation/) | Touched pattern, per-step validation, noValidate |
+
+### Data & Lists
+
+| # | Folder | What it tests |
+|---|--------|---------------|
+| 10 | [10-shopping-cart](./10-shopping-cart/) | CRUD, derived total with useMemo, Intl.NumberFormat |
+| 11 | [11-todo-app](./11-todo-app/) | Full CRUD, derived filter, double-click edit, stable IDs |
+| 12 | [12-data-table](./12-data-table/) | useMemo sort, spread before sort, cursor pagination |
+| 13 | [13-infinite-scroll](./13-infinite-scroll/) | IntersectionObserver, sentinel div, useRef guard |
+| 14 | [14-virtualized-list](./14-virtualized-list/) | Only render visible rows, translateY, total height spacer |
+
+### Interaction & Media
+
+| # | Folder | What it tests |
+|---|--------|---------------|
+| 15 | [15-image-carousel](./15-image-carousel/) | Circular modulo, ARIA live region, dot indicators |
+| 16 | [16-drag-and-drop](./16-drag-and-drop/) | HTML5 drag API, onDragOver preventDefault, immutable reorder |
+| 17 | [17-stopwatch-timer](./17-stopwatch-timer/) | requestAnimationFrame vs setInterval, useRef for timing |
+| 18 | [18-search-debounce](./18-search-debounce/) | Debounce with useEffect, AbortController for stale requests |
+| 19 | [19-dark-mode](./19-dark-mode/) | Context, localStorage, matchMedia, data-theme on root |
+
+### Advanced Patterns
+
+| # | Folder | What it tests |
+|---|--------|---------------|
+| 20 | [20-modal-system](./20-modal-system/) | Context for global state, modal stack, Portal |
+| 21 | [21-toast-system](./21-toast-system/) | Auto-dismiss, useRef for timers, ARIA live region |
+| 22 | [22-file-upload](./22-file-upload/) | XHR (not fetch) for upload progress, FormData |
+| 23 | [23-tabs-lazy](./23-tabs-lazy/) | React.lazy, dynamic import, Suspense, code splitting |
+| 24 | [24-file-explorer](./24-file-explorer/) | Recursive component, centralised Set state |
+
+---
+
+## Bonus
+
+| Project | What it is |
+|---------|-----------|
+| [tic-tac-toe](./tic-tac-toe/) | Complete Vite + React app — game logic, derived winner, restart |
+
+---
+
+## Quick concept lookup
+
+| Concept | Where to see it |
+|---------|----------------|
+| `useRef` (not useState) for non-rendering values | 17, 21, 13 |
+| Derived state with `useMemo` | 10, 11, 12, 08 |
+| Context API | 19, 20, 21 |
+| Portal (`createPortal`) | 05, 20, 21 |
+| ARIA accessibility | 01, 02, 03, 04, 05, 08, 15, 22 |
+| AbortController | 18 |
+| IntersectionObserver | 13 |
+| requestAnimationFrame | 17 |
+| Recursive component | 24 |
+| React.lazy + Suspense | 23 |
+| HTML5 Drag API | 16 |
+| Controlled component | 02, 06, 07, 08, 09 |
+| Optimistic UI / CRUD | 10, 11 |

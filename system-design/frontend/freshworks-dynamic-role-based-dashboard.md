@@ -1,5 +1,7 @@
 # Design: Dynamic Role-Based Dashboard — Freshworks Customer Support
 
+> **Scope:** End-to-end case study of a real-world role-based dashboard at Freshworks (MFE, WebSocket, offline). For the generalized B2B dashboard pattern (RBAC, virtual tables, BFF), see [Q7 — B2B Dashboard](./q07-b2b-dashboard-rbac.md).
+
 > **Interview framing:** "Design a dynamic dashboard for customer support agents at Freshworks where the layout changes based on user role, with role-based rendering, real-time ticket updates via WebSockets, and data fetching."
 
 **Mental model:** This is a **B2B RBAC dashboard** — server-driven layout config, micro-frontend widget isolation, one WebSocket connection owned by the shell, tiered data freshness per widget, and partial offline via Service Worker.

@@ -1,27 +1,36 @@
 # Top Frontend System Design Questions — Master Reference
 
-> Quick-reference for the most commonly asked FE system design questions in FAANG and top-tier interviews. Questions already covered in dedicated files are **summarised + linked**. New questions are answered in full here.
+> This file is the **master index and answer source** for commonly asked FE system design questions.
+>
+> - **Tier 1 (Q1–Q12):** Full deep-dive answers live in dedicated files. This file has a one-line summary + link per question only.
+> - **Tier 2 (Q11–Q20):** Full answers are written here — these do not have separate files.
+> - **Tier 3:** Specific-company questions covered in other standalone files.
+> - **Quick Reference:** Pattern cheat sheet at the end (scale / real-time / offline / performance / accessibility).
 
 ---
 
-## Master Question List
+## Tier 1 — Asked in almost every company
 
-### Tier 1 — Asked in almost every company (covered in depth)
+> Full answers are in the dedicated Q-files linked below. Do not duplicate content here.
 
 | # | Question | Key themes | Deep file |
 |---|---|---|---|
-| 1 | Infinite scroll / social feed | Virtualization, cursor pagination, optimistic UI | [Q1](./q01-infinite-feed-social-timeline.md) |
-| 2 | Autocomplete / search | Debounce, abort, cache, combobox a11y | [Q2](./q02-search-typeahead-autocomplete.md) |
-| 3 | Chat / messaging (DMs) | WebSocket, message ordering, dedup, optimistic send | [Q3](./q03-web-chat-dms.md) |
-| 4 | Video player / watch page | ABR, prefetch, manifest, decoder isolation | [Q4](./q04-video-watch-player.md) |
-| 5 | Maps with markers & clustering | Tile pyramid, viewport scheduling, worker clustering | [Q5](./q05-maps-markers-clustering.md) |
-| 6 | E-commerce (PLP / PDP / cart) | URL as state, SEO, filters, cart reconciliation | [Q6](./q06-ecommerce-plp-pdp-cart.md) |
-| 7 | B2B dashboard with RBAC | Permission-aware UI, virtual tables, MFE | [Q7](./q07-b2b-dashboard-rbac.md) |
-| 8 | Collaborative editor (Google Docs-lite) | OT/CRDT, WS session, reconnect snapshot | [Q8](./q08-collaborative-editor-docs-lite.md) |
-| 9 | Real-time metrics dashboard | SSE/WS, snapshot + deltas, chart downsampling | [Q11](./q11-real-time-dashboard.md) |
-| 10 | Offline-first app | SW, IndexedDB, outbox, idempotency, conflict | [Q12](./q12-offline-first-app.md) |
+| 1 | Infinite scroll / social feed | Virtualization, cursor pagination, optimistic UI | [q01](./q01-infinite-feed-social-timeline.md) |
+| 2 | Autocomplete / search | Debounce, abort, cache, combobox a11y | [q02](./q02-search-typeahead-autocomplete.md) |
+| 3 | Chat / messaging (DMs) | WebSocket, message ordering, dedup, optimistic send | [q03](./q03-web-chat-dms.md) |
+| 4 | Video player / watch page | ABR, prefetch, manifest, decoder isolation | [q04](./q04-video-watch-player.md) |
+| 5 | Maps with markers & clustering | Tile pyramid, viewport scheduling, worker clustering | [q05](./q05-maps-markers-clustering.md) |
+| 6 | E-commerce (PLP / PDP / cart) | URL as state, SEO, filters, cart reconciliation | [q06](./q06-ecommerce-plp-pdp-cart.md) |
+| 7 | B2B dashboard with RBAC | Permission-aware UI, virtual tables, MFE | [q07](./q07-b2b-dashboard-rbac.md) |
+| 8 | Collaborative editor (Google Docs-lite) | OT/CRDT, WS session, reconnect snapshot | [q08](./q08-collaborative-editor-docs-lite.md) |
+| 9 | Design system / frontend platform | Token architecture, component API, versioning, a11y | [q09](./q09-design-system-frontend-platform.md) |
+| 10 | Global shell / homepage at scale | MFE shell, SSR/SSG, feature flags, A/B testing | [q10](./q10-global-shell-homepage.md) |
+| 11 | Real-time metrics dashboard | SSE/WS, snapshot + deltas, chart downsampling | [q11](./q11-real-time-dashboard.md) |
+| 12 | Offline-first app | Service Worker, IndexedDB, outbox, idempotency, conflict | [q12](./q12-offline-first-app.md) |
 
-### Tier 2 — Frequently asked at product companies (answered below)
+---
+
+## Tier 2 — Frequently asked at product companies
 
 | # | Question | Key themes |
 |---|---|---|
@@ -36,17 +45,15 @@
 | 19 | [Notification Centre (inbox-style)](#19-notification-centre) | WS push, read/unread state, badge count, grouping |
 | 20 | [Multi-step Onboarding / Wizard Flow](#20-multi-step-onboarding--wizard-flow) | State machine, progress persistence, skip logic |
 
-### Tier 3 — Appear at specific companies (covered in other files)
+---
+
+## Tier 3 — Appear at specific companies
 
 | # | Question | File |
 |---|---|---|
 | 21 | Dynamic role-based dashboard (Freshworks) | [freshworks-dynamic-role-based-dashboard.md](./freshworks-dynamic-role-based-dashboard.md) |
 | 22 | Survey / form builder (Google Forms) | [survey-form-system-design.md](./survey-form-system-design.md) |
-| 23 | Design system / component library | [Q9](./q09-design-system-frontend-platform.md) |
-| 24 | Global homepage at scale | [Q10](./q10-global-shell-homepage.md) |
 | 25 | Instagram-style mobile UI | [instagram-frontend-design.md](./instagram-frontend-design.md) |
-
----
 
 ---
 

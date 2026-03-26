@@ -1,5 +1,7 @@
 # Designing a homepage for millions of users
 
+> **Scope:** Detailed breakdown of global homepage architecture at scale. For the full interview question with trade-offs and code, see [Q10 — Global Shell / Homepage](../q10-global-shell-homepage.md).
+
 ## Goals
 
 - **Fast first paint**: most users judge the homepage in hundreds of milliseconds.

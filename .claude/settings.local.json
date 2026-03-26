@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /Users/kveerendra/Documents/Work/Preparation/system-design/frontend/*.md /Users/kveerendra/Documents/Work/Preparation/system-design/frontend/*/*.md)",
+      "Bash(find /Users/kveerendra/Documents/Work/Preparation/ReactConcepts -type f -not -path */node_modules/* -not -path */.git/*)",
+      "Bash(find /Users/kveerendra/Documents/Work/Preparation/react-hands-on-45min -type f -not -path */node_modules/* -not -path */.git/*)",
+      "Bash(grep -E '\\\\.\\(jsx|md|txt\\)$')"
+    ]
+  }
+}

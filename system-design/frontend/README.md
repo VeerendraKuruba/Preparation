@@ -1,103 +1,173 @@
-# Frontend system design round — question index
+# Frontend System Design — Interview Prep
 
-FAANG and top-tier **frontend system design** prep. Each linked file is **one question** with: **mental model → clarify → goals → architecture → mechanics → trade-offs → failures → a11y → summary**, plus **~60 min** material (**time boxes, whiteboard checklist, deep dives, follow-ups, metrics**).
-
-**Related:** [Prep repository](../../README.md) · [System design hub](../README.md) · [Micro frontends](./micro-frontends.md) · [Google Maps zoom](./google-maps-zoom-frontend.md) · [Scalable homepage](./scalable-homepage/homepage-millions-users.md) · [Airbnb DLS](./airbnb-design-system.md) · [Performance](./performance-engineering/README.md) · [Scalability](./scalability-architecture/README.md)
-
-### Topic finder
-
-| You’re prepping | Start here |
-|-----------------|------------|
-| **E-commerce** (filters, listing scale, PLP/PDP, cart) | [Q6](./q06-ecommerce-plp-pdp-cart.md) — see **Filters & listing at scale** |
-| **Real-time dashboard** | [Q11](./q11-real-time-dashboard.md) |
-| **Offline-first** (SW, IDB, outbox, sync) | [Q12](./q12-offline-first-app.md) |
+Everything you need for a FAANG-level frontend system design round: 12 core question files, 20+ topic deep dives, product case studies, and a master reference — all structured so you can navigate in under 30 seconds.
 
 ---
 
-## ~60 minute interview — how to use these notes
+## How to use this folder
 
-A typical **frontend/system design** loop is **not** a 45-minute monologue. The hour is **dialogue + depth** somewhere. These files give you **enough topics** to go long; you still **pause for questions**.
+A typical frontend system design loop is **dialogue + depth**, not a monologue. Pause for questions. Pick two areas to go deep.
 
-| Phase | Time (guide) | What you do |
-|-------|----------------|-------------|
-| Clarify & requirements | ~8–12 min | Ask scope questions; write **functional + non-functional** list on the board; agree on “MVP” vs nice-to-have. |
-| High-level design | ~12–18 min | **Boxes + arrows**: browser, rendering choice, CDN/BFF, main APIs, client state stores. Narrate **critical user path** once end-to-end. |
-| Deep dive × 2 | ~25–35 min total | Pick **two** areas the interviewer cares about (they often steer). Each deep dive: problem → approach → trade-off → failure mode. Use **Deep dives** sections in each Q file. |
-| Trade-offs, scale, wrap | ~8–12 min | Explicit **what you’d cut for v1**, **observability**, **a11y/security** one-liners, **minute summary**. |
-
-**Reality check:** If you only recite bullets, you finish early. The **stretch** content is in **Deep dives** + **Follow-ups** + drawing **data structures** (lists, caches, state machines). Practice **one Q file out loud** with a 50-minute timer and let a friend interrupt you.
+| Phase | Time | What you do |
+|---|---|---|
+| Clarify & requirements | 8–12 min | Ask scope; write functional + non-functional list; agree on MVP vs nice-to-have |
+| High-level architecture | 12–18 min | Browser → CDN/BFF → services diagram; narrate the critical user path end-to-end |
+| Deep dive × 2 | 25–35 min | Pick two areas the interviewer steers toward; each: problem → approach → trade-off → failure mode |
+| Trade-offs, wrap | 8–12 min | State what you'd cut for v1, one observability point, one a11y/security note, 60-second summary |
 
 ---
 
-## How to use every round (meta-framework)
+## Start here — by what you're preparing
 
-### One-line mental model
-
-Design **what runs in the browser and at the edge**: HTML strategy, bundles, caching, client state, graceful degradation—not full backend schemas unless asked.
-
-### Clarify scope in the interview
-
-- **Users & devices:** mobile web, desktop, low-end hardware, regions.
-- **Auth:** anonymous, consumer logged-in, B2B **RBAC**.
-- **SEO:** public indexable routes vs app behind login.
-- **Realtime:** poll vs **SSE** vs **WebSocket**; staleness tolerance.
-- **Constraints:** offline, **WCAG**, RTL / i18n.
-
-### Goals & requirements (name a few explicitly)
-
-| Type | Examples |
-|------|----------|
-| Functional | Core user journeys on the whiteboard |
-| Latency | LCP, TTI, interaction ready |
-| Scale | Concurrent users, rows/items in one view |
-| Reliability | Timeouts, partial UI when a service fails |
-| Security | XSS, CSP, where tokens live |
-
-### High-level frontend architecture
-
-Browser (**SSG / SSR / CSR / islands**) → **CDN / BFF** → services. Mark **where HTML is produced**, **where cache sits**, and **source of truth**.
-
-### What you deep-dive (pick 1–2)
-
-Virtualization, HTTP/SWR caching, URL-as-state, streaming SSR, WebSockets, maps/tiles, images, micro-frontends.
-
-### Failure modes & degradation
-
-API slow/error, socket down, third-party script, bad deploy—each needs a **user-visible** fallback.
-
-### Accessibility checklist
-
-Keyboard paths, focus, semantics, motion preferences—**specific to the prompt**.
-
-### Minute summary (closing)
-
-Restate: **rendering strategy + data/caching + one risk** you mitigated.
+| Preparing for | Start with |
+|---|---|
+| Social feed, timeline | [Q1](./q01-infinite-feed-social-timeline.md) → [23](./23-infinite-scroll-millions-of-items.md) → [instagram-frontend-design.md](./instagram-frontend-design.md) |
+| Chat, messaging | [Q3](./q03-web-chat-dms.md) → [25](./25-frontend-architecture-chat-apps.md) |
+| Video player | [Q4](./q04-video-watch-player.md) |
+| Maps, geospatial UI | [Q5](./q05-maps-markers-clustering.md) → [google-maps-zoom-frontend.md](./google-maps-zoom-frontend.md) |
+| E-commerce, PLP/PDP | [Q6](./q06-ecommerce-plp-pdp-cart.md) → [zomato-frontend-design.md](./zomato-frontend-design.md) |
+| B2B dashboard, RBAC | [Q7](./q07-b2b-dashboard-rbac.md) → [22](./22-scalable-dashboard.md) → [38](./scalability-architecture/38-permissions-rbac-frontend.md) |
+| Real-time / live data | [Q11](./q11-real-time-dashboard.md) → [22](./22-scalable-dashboard.md) → [24](./24-real-time-notification-system.md) |
+| Offline-first, PWA | [Q12](./q12-offline-first-app.md) → [27](./27-client-side-caching-strategies.md) |
+| Design system | [Q9](./q09-design-system-frontend-platform.md) → [airbnb-design-system.md](./airbnb-design-system.md) → [39](./scalability-architecture/39-reusable-component-systems.md) |
+| Forms, schema-driven UI | [survey-form-system-design.md](./survey-form-system-design.md) |
+| Homepage, global shell | [Q10](./q10-global-shell-homepage.md) → [scalable-homepage](./scalable-homepage/homepage-millions-users.md) |
+| Micro-frontends | [micro-frontends.md](./micro-frontends.md) → [micro-fe-module-federation](./micro-fe-module-federation/README.md) |
+| Performance | [20](./performance-engineering/20-reduce-bundle-size.md) → [19](./performance-engineering/19-optimize-expensive-computations.md) → [performance-engineering/](./performance-engineering/README.md) |
+| Caching strategies | [27](./27-client-side-caching-strategies.md) → [Q12](./q12-offline-first-app.md) |
+| State management | [36](./scalability-architecture/36-state-management-at-scale.md) |
+| RBAC, permissions | [38](./scalability-architecture/38-permissions-rbac-frontend.md) → [Q7](./q07-b2b-dashboard-rbac.md) |
+| Analytics, event tracking | [28](./28-analytics-event-tracking-pipeline.md) |
+| Error monitoring | [29](./29-error-logging-and-monitoring.md) |
+| Feature flags | [26](./26-feature-flag-system.md) |
+| Search, typeahead | [Q2](./q02-search-typeahead-autocomplete.md) |
+| Collaborative editing | [Q8](./q08-collaborative-editor-docs-lite.md) |
 
 ---
 
-## Questions (Q1–Q12)
+## Core Interview Questions (Q1–Q12)
+
+One file per question. Each covers: mental model → clarify → architecture → mechanics → trade-offs → failure modes → a11y → summary + ~60 min of material.
+
+| # | Topic | Key themes | File |
+|---|---|---|---|
+| Q1 | Infinite feed / social timeline | virtualization, pagination, optimistic UI | [q01-infinite-feed-social-timeline.md](./q01-infinite-feed-social-timeline.md) |
+| Q2 | Search + typeahead / autocomplete | debounce, caching, a11y | [q02-search-typeahead-autocomplete.md](./q02-search-typeahead-autocomplete.md) |
+| Q3 | Web chat / DMs | WebSocket, reconnect, message ordering | [q03-web-chat-dms.md](./q03-web-chat-dms.md) |
+| Q4 | Video watch page / player | adaptive streaming, buffering, preload | [q04-video-watch-player.md](./q04-video-watch-player.md) |
+| Q5 | Maps-heavy UI (markers, clustering) | tile loading, clustering, interaction | [q05-maps-markers-clustering.md](./q05-maps-markers-clustering.md) |
+| Q6 | E-commerce (filters, PLP, PDP, cart) | SEO, filter state, cart correctness | [q06-ecommerce-plp-pdp-cart.md](./q06-ecommerce-plp-pdp-cart.md) |
+| Q7 | B2B dashboard (tables, RBAC) | RBAC, dense tables, live updates | [q07-b2b-dashboard-rbac.md](./q07-b2b-dashboard-rbac.md) |
+| Q8 | Collaborative editor (docs-lite) | OT/CRDT, presence, conflict resolution | [q08-collaborative-editor-docs-lite.md](./q08-collaborative-editor-docs-lite.md) |
+| Q9 | Design system / frontend platform | tokens, versioning, a11y, adoption | [q09-design-system-frontend-platform.md](./q09-design-system-frontend-platform.md) |
+| Q10 | Global shell / homepage at scale | SSR/SSG, islands, CDN, personalization | [q10-global-shell-homepage.md](./q10-global-shell-homepage.md) |
+| Q11 | Real-time dashboard (live metrics) | SSE/WS, rAF batching, back-pressure | [q11-real-time-dashboard.md](./q11-real-time-dashboard.md) |
+| Q12 | Offline-first app (SW, IDB, outbox) | Service Worker, IndexedDB, sync queue | [q12-offline-first-app.md](./q12-offline-first-app.md) |
+
+---
+
+## Topic Deep Dives
+
+### Dashboard & Real-time
 
 | # | Topic | File |
-|---|--------|------|
-| Q1 | Infinite feed / social timeline | [q01-infinite-feed-social-timeline.md](./q01-infinite-feed-social-timeline.md) |
-| Q2 | Search + typeahead / autocomplete | [q02-search-typeahead-autocomplete.md](./q02-search-typeahead-autocomplete.md) |
-| Q3 | Web chat / DMs | [q03-web-chat-dms.md](./q03-web-chat-dms.md) |
-| Q4 | Video watch page / player | [q04-video-watch-player.md](./q04-video-watch-player.md) |
-| Q5 | Maps-heavy UI (markers, clustering) | [q05-maps-markers-clustering.md](./q05-maps-markers-clustering.md) |
-| Q6 | E-commerce (filters, listing scale, PLP, PDP, cart) | [q06-ecommerce-plp-pdp-cart.md](./q06-ecommerce-plp-pdp-cart.md) |
-| Q7 | B2B dashboard (tables, RBAC) | [q07-b2b-dashboard-rbac.md](./q07-b2b-dashboard-rbac.md) |
-| Q8 | Collaborative editor (docs-lite) | [q08-collaborative-editor-docs-lite.md](./q08-collaborative-editor-docs-lite.md) |
-| Q9 | Design system / frontend platform | [q09-design-system-frontend-platform.md](./q09-design-system-frontend-platform.md) |
-| Q10 | Global shell / homepage (scale) | [q10-global-shell-homepage.md](./q10-global-shell-homepage.md) |
+|---|---|---|
+| 22 | Scalable dashboard | [22-scalable-dashboard.md](./22-scalable-dashboard.md) |
 | Q11 | Real-time dashboard (live metrics) | [q11-real-time-dashboard.md](./q11-real-time-dashboard.md) |
+| Q7 | B2B dashboard with RBAC | [q07-b2b-dashboard-rbac.md](./q07-b2b-dashboard-rbac.md) |
+
+### Lists & Scroll
+
+| # | Topic | File |
+|---|---|---|
+| 23 | Infinite scroll at millions of items | [23-infinite-scroll-millions-of-items.md](./23-infinite-scroll-millions-of-items.md) |
+| 16 | Optimize large lists | [performance-engineering/16-optimize-large-lists.md](./performance-engineering/16-optimize-large-lists.md) |
+| 17 | List virtualization | [performance-engineering/17-list-virtualization.md](./performance-engineering/17-list-virtualization.md) |
+
+### Communication & Real-time
+
+| # | Topic | File |
+|---|---|---|
+| Q3 | Web chat / DMs | [q03-web-chat-dms.md](./q03-web-chat-dms.md) |
+| 24 | Real-time notification system | [24-real-time-notification-system.md](./24-real-time-notification-system.md) |
+| 25 | Frontend architecture for chat apps | [25-frontend-architecture-chat-apps.md](./25-frontend-architecture-chat-apps.md) |
+
+### Caching & Offline
+
+| # | Topic | File |
+|---|---|---|
+| 27 | Client-side caching strategies | [27-client-side-caching-strategies.md](./27-client-side-caching-strategies.md) |
 | Q12 | Offline-first app (SW, IDB, outbox) | [q12-offline-first-app.md](./q12-offline-first-app.md) |
+
+### Performance
+
+| # | Topic | File |
+|---|---|---|
+| 20 | Reduce bundle size | [performance-engineering/20-reduce-bundle-size.md](./performance-engineering/20-reduce-bundle-size.md) |
+| 19 | Optimize expensive computations | [performance-engineering/19-optimize-expensive-computations.md](./performance-engineering/19-optimize-expensive-computations.md) |
+| 18 | Prevent unnecessary React re-renders | [performance-engineering/18-prevent-unnecessary-react-rerenders.md](./performance-engineering/18-prevent-unnecessary-react-rerenders.md) |
+| 21 | Heavy API data without blocking UI | [performance-engineering/21-heavy-api-data-without-blocking-ui.md](./performance-engineering/21-heavy-api-data-without-blocking-ui.md) |
+| 16 | Optimize large lists | [performance-engineering/16-optimize-large-lists.md](./performance-engineering/16-optimize-large-lists.md) |
+| 17 | List virtualization | [performance-engineering/17-list-virtualization.md](./performance-engineering/17-list-virtualization.md) |
+
+Full collection: [performance-engineering/](./performance-engineering/README.md)
+
+### Architecture & Scale
+
+| # | Topic | File |
+|---|---|---|
+| 36 | State management at scale | [scalability-architecture/36-state-management-at-scale.md](./scalability-architecture/36-state-management-at-scale.md) |
+| 37 | Structuring large React codebases | [scalability-architecture/37-structuring-large-react-codebases.md](./scalability-architecture/37-structuring-large-react-codebases.md) |
+| 38 | Permissions & RBAC on the frontend | [scalability-architecture/38-permissions-rbac-frontend.md](./scalability-architecture/38-permissions-rbac-frontend.md) |
+| 39 | Reusable component systems | [scalability-architecture/39-reusable-component-systems.md](./scalability-architecture/39-reusable-component-systems.md) |
+| 40 | Handling API failures gracefully | [scalability-architecture/40-api-failures-gracefully.md](./scalability-architecture/40-api-failures-gracefully.md) |
+| — | Micro-frontends | [micro-frontends.md](./micro-frontends.md) · [micro-fe-module-federation/](./micro-fe-module-federation/README.md) |
+
+Full collection: [scalability-architecture/](./scalability-architecture/README.md)
+
+### Reliability
+
+| # | Topic | File |
+|---|---|---|
+| 29 | Error logging and monitoring | [29-error-logging-and-monitoring.md](./29-error-logging-and-monitoring.md) |
+| 28 | Analytics and event tracking pipeline | [28-analytics-event-tracking-pipeline.md](./28-analytics-event-tracking-pipeline.md) |
+| 40 | Handling API failures gracefully | [scalability-architecture/40-api-failures-gracefully.md](./scalability-architecture/40-api-failures-gracefully.md) |
+| 26 | Feature flag system | [26-feature-flag-system.md](./26-feature-flag-system.md) |
 
 ---
 
-## Company emphasis (tailor the same question)
+## Product Case Studies
+
+Real-world product prompts with specific company context.
+
+| Product / Company | What it covers | File |
+|---|---|---|
+| Instagram-style UI | Feed, stories, infinite scroll, media optimization | [instagram-frontend-design.md](./instagram-frontend-design.md) |
+| Zomato-style discovery | Search, filters, maps, listing scale | [zomato-frontend-design.md](./zomato-frontend-design.md) |
+| Freshworks dynamic dashboard | MFE + WebSocket + Offline + Role-based views | [freshworks-dynamic-role-based-dashboard.md](./freshworks-dynamic-role-based-dashboard.md) |
+| Survey form system | Schema-driven forms, conditional logic, offline draft, file upload | [survey-form-system-design.md](./survey-form-system-design.md) |
+| Airbnb design system | Design language system, tokens, adoption at scale | [airbnb-design-system.md](./airbnb-design-system.md) |
+| Google Maps zoom | Tile loading, zoom levels, clustering, viewport math | [google-maps-zoom-frontend.md](./google-maps-zoom-frontend.md) |
+| Scalable homepage | SSR/SSG, islands architecture, personalization at edge | [scalable-homepage/homepage-millions-users.md](./scalable-homepage/homepage-millions-users.md) |
+
+---
+
+## Master Reference
+
+| File | What it covers |
+|---|---|
+| [top-fe-system-design-questions.md](./top-fe-system-design-questions.md) | 25 top questions with full answers — Kanban, File Manager, Calendar, Photo Grid, Booking, Payments, Code Editor, Video Conferencing, Notifications, Onboarding Wizard + links back to Q1–Q12 for overlap topics |
+
+Use this for Tier 2 questions that don't appear in Q1–Q12. It's also a good scan before a broad interview where the topic is unknown.
+
+---
+
+## Company focus
+
+Same question, different emphasis. Tailor your deep-dive picks accordingly.
 
 | Company / bucket | Stress extra |
-|------------------|----------------|
+|---|---|
 | **Meta** | Feed/composer scale, optimistic UI, measurement |
 | **Google** | Perf correctness, search, maps/media depth |
 | **Apple** | Motion, clarity, privacy, a11y |
@@ -109,16 +179,16 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | **Stripe / Square** | RBAC dashboards, correctness |
 | **ByteDance / TikTok** | Feed/media, low-end devices |
 | **Spotify** | Playback + browse continuity |
-| **Shopify** | Extensibility, merchant flows, **PLP filters** |
-| **Bloomberg** | Dense tables, keyboard, **live** ticks |
-| **Observability vendors** (Datadog-style angle) | High-cardinality caution UX, **pause** live, chart perf |
+| **Shopify** | Extensibility, merchant flows, PLP filters |
+| **Bloomberg** | Dense tables, keyboard, live ticks |
+| **Observability vendors** | High-cardinality caution UX, pause-live UX, chart perf |
 
 ---
 
-## v1 vs later (cross-question)
+## v1 vs later cheat sheet
 
 | Feature | v1 | Later |
-|---------|----|--------|
+|---|---|---|
 | Feed | Virtualize + pagination | Ranking experiments, richer cards |
 | Chat | WS + list + reconnect | Threads, search |
 | Search | Debounce + cache + a11y | Personalization |
@@ -126,47 +196,8 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | Live dashboard | Snapshot + one multiplexed stream + rAF batching | Worker downsample, shared-tab connection |
 | Offline-first | Read cache + write outbox + idempotency | Background Sync, conflict merges, multi-tab locks |
 | Homepage | Shell + islands | Deeper edge personalization |
+| Design system | Tokens + core components + docs site | Codemods, automated a11y audits, versioned changelogs |
 
 ---
 
-## Extended topics (beyond Q1–Q12)
-
-### Numbered deep dives (22–29)
-
-| # | Topic | File |
-|---|--------|------|
-| 22 | Scalable dashboard | [22-scalable-dashboard.md](./22-scalable-dashboard.md) |
-| 23 | Infinite scroll at huge scale | [23-infinite-scroll-millions-of-items.md](./23-infinite-scroll-millions-of-items.md) |
-| 24 | Real-time notification system | [24-real-time-notification-system.md](./24-real-time-notification-system.md) |
-| 25 | Frontend architecture for chat apps | [25-frontend-architecture-chat-apps.md](./25-frontend-architecture-chat-apps.md) |
-| 26 | Feature flag system | [26-feature-flag-system.md](./26-feature-flag-system.md) |
-| 27 | Client-side caching strategies | [27-client-side-caching-strategies.md](./27-client-side-caching-strategies.md) |
-| 28 | Analytics and event tracking pipeline | [28-analytics-event-tracking-pipeline.md](./28-analytics-event-tracking-pipeline.md) |
-| 29 | Error logging and monitoring | [29-error-logging-and-monitoring.md](./29-error-logging-and-monitoring.md) |
-
-### Product-style scenarios
-
-| Topic | File |
-|--------|------|
-| FAANG-style answer patterns | [faang-top-tier-frontend-system-design-answers.md](./faang-top-tier-frontend-system-design-answers.md) |
-| Instagram-style UI | [instagram-frontend-design.md](./instagram-frontend-design.md) |
-| Twitter-like feed | [twitter-like-feed-frontend.md](./twitter-like-feed-frontend.md) |
-| Zomato-style discovery | [zomato-frontend-design.md](./zomato-frontend-design.md) |
-| Scalable chat UI | [scalable-chat-ui-design.md](./scalable-chat-ui-design.md) |
-| **Freshworks — Dynamic Role-Based Dashboard** (MFE + WS + Offline) | [freshworks-dynamic-role-based-dashboard.md](./freshworks-dynamic-role-based-dashboard.md) |
-| **Survey Form System** (schema-driven, conditional logic, offline draft, file upload) | [survey-form-system-design.md](./survey-form-system-design.md) |
-
-### Master reference
-
-| File | What it covers |
-|---|---|
-| [**top-fe-system-design-questions.md**](./top-fe-system-design-questions.md) | All 25 top questions — full answers for Kanban, File Manager, Calendar, Photo Grid, Booking, Payments, Code Editor, Video Conferencing, Notifications, Onboarding Wizard + links to Q1–Q12 |
-
-### Topic collections
-
-- [Performance engineering](./performance-engineering/README.md)
-- [Scalability architecture](./scalability-architecture/README.md)
-
----
-
-*Prep material—not leaked questions. Practice one **Q#** for **50–60 minutes** with interruptions (or two **deep dives** only for ~30 min).*
+*Prep material — not leaked questions. Practice one Q# file out loud with a 50-minute timer and let someone interrupt you.*

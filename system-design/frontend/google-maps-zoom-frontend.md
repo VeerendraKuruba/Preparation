@@ -1,5 +1,7 @@
 # Google Maps zoom (frontend system design)
 
+> **Scope:** Deep dive on zoom mechanics, tile math, and gesture handling. For the full maps design question (markers, clustering, viewport scheduling), see [Q5 — Maps](./q05-maps-markers-clustering.md).
+
 Use this doc when the prompt is **how a web map client implements smooth zoom in / zoom out**—tile loading, gestures, rendering, and perceived performance.
 
 ## One-line mental model
