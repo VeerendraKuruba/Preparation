@@ -156,6 +156,12 @@ Restate: **rendering strategy + data/caching + one risk** you mitigated.
 | **Freshworks — Dynamic Role-Based Dashboard** (MFE + WS + Offline) | [freshworks-dynamic-role-based-dashboard.md](./freshworks-dynamic-role-based-dashboard.md) |
 | **Survey Form System** (schema-driven, conditional logic, offline draft, file upload) | [survey-form-system-design.md](./survey-form-system-design.md) |
 
+### Master reference
+
+| File | What it covers |
+|---|---|
+| [**top-fe-system-design-questions.md**](./top-fe-system-design-questions.md) | All 25 top questions — full answers for Kanban, File Manager, Calendar, Photo Grid, Booking, Payments, Code Editor, Video Conferencing, Notifications, Onboarding Wizard + links to Q1–Q12 |
+
 ### Topic collections
 
 - [Performance engineering](./performance-engineering/README.md)
