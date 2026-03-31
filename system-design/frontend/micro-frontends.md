@@ -312,3 +312,281 @@ Neither is “better”—interviewers want **criteria**: team topology, release
 ## Closing sound bite
 
 > “We use a **host shell** for shared concerns and routing, and **compose domain UIs as remotes**—often **runtime federation**—with a **small, stable contract** for auth and navigation. That gives **independent deploys** while the user sees **one application**.”
+
+---
+
+## Interview Questions & Answers
+
+### Conceptual / Fundamentals
+
+---
+
+**Q1. What is a micro-frontend and when would you use one?**
+
+> A micro-frontend splits a UI into **independently deployable slices**, each owned by a different team, composed at runtime or build time into a single user experience via a shell. Use it when teams have **different release cadences**, the monolith creates **merge or deploy bottlenecks**, or you need **incremental migration** from a legacy stack. Avoid it when you have a small team — a modular monolith with lazy routes is simpler.
+
+---
+
+**Q2. What are the main integration patterns?**
+
+| Pattern | When to pick it |
+|---|---|
+| Runtime Module Federation | True independent deploys; teams on different schedules |
+| Build-time npm packages | Simpler ops; lower frequency of remote changes |
+| iframes + postMessage | Maximum isolation; third-party or legacy embeds |
+| Web Components | Framework-agnostic shell; long-lived platform |
+| single-spa / qiankun | Multi-framework shell with lifecycle management |
+
+---
+
+**Q3. What does the host shell own vs what do remotes own?**
+
+- **Shell owns:** top-level router, auth/session, chrome (header, nav), design tokens, global error boundary, observability setup
+- **Remotes own:** domain routes, domain state, domain-specific UI components
+
+Remotes should never own shared concerns — that creates hidden coupling.
+
+---
+
+**Q4. How do you prevent loading React twice when using Module Federation?**
+
+Use the `shared` config with `singleton: true`:
+
+```js
+shared: {
+  react: { singleton: true, requiredVersion: '^18.0.0' },
+  'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
+}
+```
+
+Without singleton, each remote bundles its own React → React hooks break because they rely on a single React instance in the closure.
+
+---
+
+### Version Management
+
+---
+
+**Q5. If you change a shared component library, how do you avoid breaking all micro-frontends at once?**
+
+Three layers of defense:
+
+1. **Semantic versioning** — breaking changes → major bump; each MFE pins its own version and upgrades on its own schedule
+2. **Changesets** — contributors declare change severity before merging; CI auto-bumps the version on merge
+3. **Backward-compatible releases** — deprecate old API first, remove in the next major; give teams a migration window
+
+Never auto-publish `latest` on every merge without a semver gate.
+
+---
+
+**Q6. In Module Federation, how do you manage which version of a remote the shell loads?**
+
+The shell references the remote's `remoteEntry.js` via URL:
+
+```js
+remotes: {
+  catalog: `catalog@${process.env.CATALOG_CDN_URL}/remoteEntry.js`
+}
+```
+
+Strategies:
+- **Floating URL** (`/remoteEntry.js`) — shell always loads whatever the remote team last deployed (true continuous deploy, higher risk)
+- **Versioned URL** (`/v1.4.2/remoteEntry.js`) — shell pins a specific remote version; explicit upgrade
+- **Config service** — shell fetches a manifest at boot that maps remote names to URLs; enables **canary / feature-flag** routing per user
+
+---
+
+**Q7. How do you handle a breaking change in the shell-to-remote contract?**
+
+- Never break the contract unilaterally
+- Add the new API, keep the old one, use a **feature flag** to roll remotes over one at a time
+- Once all remotes are migrated, remove the old API in the next major shell version
+- Document the contract in an **Interface Definition** (shared TypeScript types, or an AsyncAPI/OpenAPI-style contract doc)
+
+---
+
+### CSS & Styling
+
+---
+
+**Q8. How do you prevent CSS class name collisions between the shell and remotes?**
+
+Four approaches, in order of strictness:
+
+1. **BEM namespace prefix** — every class in the common lib is prefixed: `.cui-btn`, `.cui-card__header` (convention-based, zero tooling)
+2. **CSS Modules** — compiler transforms `.btn` → `button_btn__x7k2p`; zero leakage by design
+3. **CSS-in-JS** (styled-components / emotion) — runtime generates unique class names; adds bundle/runtime cost
+4. **Shadow DOM** (Web Components) — full encapsulation; nothing leaks in or out
+
+For most teams: CSS Modules inside each remote + BEM prefix on the shared design system.
+
+---
+
+**Q9. What is a CSS `@layer` and how does it help in micro-frontends?**
+
+```css
+/* common-ui */
+@layer common-ui {
+  .btn { color: red; }
+}
+
+/* app-level — always wins without !important */
+.btn { color: blue; }
+```
+
+`@layer` lets you declare **specificity precedence** at the architecture level. Common-ui styles sit in a named layer; any unlayered app-level rule wins automatically. Prevents specificity wars across teams.
+
+---
+
+**Q10. If two remotes load different versions of the same CSS-in-JS library, what happens?**
+
+Both inject `<style>` tags with their own class hashes — likely no collision, but you get **duplicate library runtime** (two emotion instances, two style sheets). Mitigation: add the CSS-in-JS library to the Module Federation `shared` config with `singleton: true`.
+
+---
+
+### Communication & State
+
+---
+
+**Q11. How do micro-frontends communicate with each other?**
+
+- **Shell-to-remote props/context:** shell passes auth info, locale, user data as props or a React context at mount time
+- **Custom events (DOM):** remotes emit `window.dispatchEvent(new CustomEvent('cart:updated', { detail }))`, other remotes listen — decoupled, no import needed
+- **Shared state library:** if on the same framework, a tiny shared Zustand/Redux slice via federation `shared` config — use sparingly
+- **URL / query params:** deep link state lives in the URL; all remotes read from it
+- **BFF / API:** for cross-domain data, fetch from backend rather than passing across MFE boundary
+
+Avoid: direct imports between remote bundles (tight coupling), large shared global stores.
+
+---
+
+**Q12. How does authentication work across micro-frontends?**
+
+- Shell handles login, receives tokens
+- Preferred: **HttpOnly cookie** set by a BFF — all remotes on the same domain get it automatically, no token passing needed
+- Alternative: shell passes a **read-only auth context** (userId, roles) as props at mount; remotes never store the raw token
+- Never store tokens in `localStorage` inside individual remotes — each team reinventing token storage is a security risk
+
+---
+
+### Performance
+
+---
+
+**Q13. What performance problems are unique to micro-frontends?**
+
+1. **Duplicate dependencies** — if `shared` is misconfigured, React loads twice; use `singleton: true`
+2. **Waterfall on boot** — shell fetches → remote manifest fetches → remote JS loads; mitigate with `<link rel=”preload”>` on critical remotes
+3. **JS budget drift** — each team adds dependencies independently; introduce **size budgets per remote** in CI
+4. **No shared chunk graph** — build-time optimizations like tree-shaking across remote boundaries don't exist; each remote is its own bundle
+
+---
+
+**Q14. How do you handle a remote that fails to load?**
+
+```tsx
+<ErrorBoundary fallback={<RemoteFailedBanner name=”Catalog” />}>
+  <Suspense fallback={<Skeleton />}>
+    <CatalogApp />
+  </Suspense>
+</ErrorBoundary>
+```
+
+- **Error boundary** catches render errors from the remote
+- **Suspense** handles the async load
+- On load failure: show a domain-specific fallback (not a white screen), log to observability, optionally retry with exponential backoff
+- CDN should serve a **stale cached `remoteEntry`** if the origin is down (Cache-Control + stale-while-revalidate)
+
+---
+
+### Testing & DX
+
+---
+
+**Q15. How do you test across micro-frontend boundaries?**
+
+| Layer | What to test | Tool |
+|---|---|---|
+| Unit | Each remote in isolation | Jest / Vitest |
+| Contract | Shell ↔ remote interface (props, events) | Pact / shared TypeScript types |
+| Integration | Shell mounting a real remote | Cypress / Playwright with both apps running |
+| E2E | Critical cross-remote user flows (login → catalog → checkout) | Playwright / Cypress |
+
+Contract tests are the most valuable — they catch breaking changes before runtime.
+
+---
+
+**Q16. How do you set up local development when you have 5 remotes?**
+
+Options:
+1. **Mock remotes** — shell has a `dev` config pointing remotes to local mock components or stubs; each team only runs their own remote + shell
+2. **Remote dev servers** — run all remotes locally with `webpack-dev-server`; shell's env points to `localhost:3001`, `localhost:3002`, etc.
+3. **Hybrid** — run only the remote you're working on; point others at the staging CDN URL
+
+Most teams do option 3 — point unrelated remotes at staging and only start what you're developing.
+
+---
+
+**Q17. What would you put in a “platform team” to support micro-frontend teams?**
+
+- **Shell** — routing, auth, global error boundary
+- **Design system** — versioned component library, tokens
+- **Shared tooling** — webpack/vite federation base config, eslint presets, CI templates
+- **Contract testing infrastructure** — shared Pact broker or TypeScript interface package
+- **Observability** — one RUM SDK, one error tracking config, standard logging shape
+- **Local dev tooling** — a CLI to start any subset of remotes quickly
+
+Without a platform team, each MFE team solves the same infrastructure problems independently and you lose the benefits of federation.
+
+---
+
+### Scenario / Trade-off
+
+---
+
+**Q18. Your manager says “just use iframes for isolation”. What do you say?**
+
+> iframes give the strongest isolation but come with real UX costs: you can't seamlessly control scroll, focus, or height across the boundary; deep linking and the back button require `postMessage` coordination; accessibility (focus trapping, `aria` across documents) is hard to get right; and performance budgets are harder to reason about. I'd use iframes for **genuinely untrusted or legacy content** where security blast radius matters more than seamless UX. For our own teams, module federation with CSS Modules gives good-enough isolation with a far better developer and user experience.
+
+---
+
+**Q19. When would you NOT use micro-frontends?**
+
+- Single small team — overhead of contracts, versioning, and multi-repo DX outweighs the autonomy benefit
+- Highly coupled state across all domains — if checkout needs real-time catalog inventory and shared cart, the boundary is too expensive to maintain
+- Early-stage product — boundaries that seem obvious now will be wrong in 6 months; wait until team and domain structure stabilizes
+- Performance-critical single-page — every remote load is a network round trip; if every ms counts, a modular monolith with aggressive code splitting is simpler to tune
+
+---
+
+**Q20. End-to-end: Design a micro-frontend shell for an e-commerce site with 3 teams.**
+
+**Teams:** Catalog (browse), Cart (add/review), Checkout (payment)
+
+```
+Shell responsibilities:
+  - Auth (HttpOnly cookie via BFF)
+  - Top-level router: /catalog/* → Catalog, /cart → Cart, /checkout/* → Checkout
+  - Header/nav component (owns cart item count via custom event)
+  - Global error boundary + observability init
+
+Remotes (each team owns):
+  - Own webpack/vite config with ModuleFederationPlugin
+  - Own CDN deploy pipeline
+  - Expose a single mount component
+
+Cross-remote contract:
+  - Auth: shell passes { userId, roles } as context; cookie handles API auth
+  - Cart updates: Catalog emits CustomEvent('cart:item:added'); Shell header listens
+  - Navigation: remotes call window.history.pushState for sub-routes; shell router owns top-level
+
+CSS:
+  - Shared design system: @company/ds, versioned npm, BEM-prefixed (.ds-btn)
+  - Each remote: CSS Modules for internal styles
+
+Version management:
+  - Shared lib: Changesets for semver; each team upgrades independently
+  - Remote URLs: env-var config service; staging points to each team's staging CDN
+```
+
+This gives 3 independent deploy pipelines, one consistent UX, and a clear platform contract.
