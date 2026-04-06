@@ -37,7 +37,14 @@
       "WebFetch(domain:interviewprep.org)",
       "WebFetch(domain:gist.github.com)",
       "WebFetch(domain:www.codingkaro.in)",
-      "WebFetch(domain:www.levels.fyi)"
+      "WebFetch(domain:www.levels.fyi)",
+      "Bash(npm install:*)",
+      "Bash(node solution.js)",
+      "Bash(node test-runner.js)",
+      "Bash(kill %1)",
+      "Bash(xargs kill:*)",
+      "Bash(git -C /Users/kveerendra/Documents/Work/Preparation status --short)",
+      "Bash(git -C /Users/kveerendra/Documents/Work/Preparation status --short ebay-nodejs-practice/)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation"

@@ -1,0 +1,16 @@
+{
+  "name": "ebay-nodejs-practice",
+  "version": "1.0.0",
+  "description": "eBay Node.js interview practice - Messaging API",
+  "main": "starter.js",
+  "scripts": {
+    "start": "node starter.js",
+    "solution": "node solution.js",
+    "test": "node test-runner.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "express": "^4.18.2",
+    "mongoose": "^8.23.0"
+  }
+}
