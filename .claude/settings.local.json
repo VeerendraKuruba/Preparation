@@ -44,7 +44,11 @@
       "Bash(kill %1)",
       "Bash(xargs kill:*)",
       "Bash(git -C /Users/kveerendra/Documents/Work/Preparation status --short)",
-      "Bash(git -C /Users/kveerendra/Documents/Work/Preparation status --short ebay-nodejs-practice/)"
+      "Bash(git -C /Users/kveerendra/Documents/Work/Preparation status --short ebay-nodejs-practice/)",
+      "WebFetch(domain:www.frontendgeek.com)",
+      "WebFetch(domain:khaniqbal.medium.com)",
+      "WebFetch(domain:www.educative.io)",
+      "WebFetch(domain:jpmorganchase.github.io)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
