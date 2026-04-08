@@ -51,7 +51,7 @@ app.post('/messages', async (req, res) => {
     }
 
     messages.push(message);
-    return res.status(200).json(message)
+    return res.status(201).json(message)
 
   } catch(error) {
     if(error.messgae === 'timeout'){
