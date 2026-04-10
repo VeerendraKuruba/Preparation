@@ -1,1124 +1,933 @@
-MICRO FRONTEND ARCHITECTURE — INTERVIEW Q&A
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Micro Frontend Architecture — Interview Q&A
 
-INDEX
-  1.  What is a Micro Frontend?
-  2.  Why would you choose MFE over a monolith?
-  3.  How do you actually integrate multiple MFEs into one page?
-  4.  What is Module Federation and how does it work?
-  5.  What is remoteEntry.js and why does it matter?
-  6.  Shared Modules — what they are and how versioning works
-  7.  What happens when two MFEs need different versions of a shared lib?
-  8.  How does routing work across MFEs?
-  9.  How do MFEs talk to each other?
-  10. How do you share state across MFEs?
-  11. How do you handle authentication?
-  12. How do you prevent CSS from one MFE breaking another?
-  13. How does independent deployment actually work?
-  14. How do you handle a MFE that fails to load?
-  15. What are the real downsides? When would you NOT use MFE?
-  16. How would you migrate an existing monolith to MFEs?
-  17. Quick-fire scenario questions
+## Index
+1. What is a Micro Frontend?
+2. Why would you choose MFE over a monolith?
+3. How do you actually integrate multiple MFEs into one page?
+4. What is Module Federation and how does it work?
+5. What is remoteEntry.js and why does it matter?
+6. Shared Modules — what they are and how versioning works
+7. What happens when two MFEs need different versions of a shared lib?
+8. How does routing work across MFEs?
+9. How do MFEs talk to each other?
+10. How do you share state across MFEs?
+11. How do you handle authentication?
+12. How do you prevent CSS from one MFE breaking another?
+13. How does independent deployment actually work?
+14. How do you handle a MFE that fails to load?
+15. What are the real downsides? When would you NOT use MFE?
+16. How would you migrate an existing monolith to MFEs?
+17. Quick-fire scenario questions
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. WHAT IS A MICRO FRONTEND?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-Q: Can you explain micro frontend architecture in simple terms?
+## Q1: Can you explain micro frontend architecture in simple terms?
 
-A:
-Think of it like this — you go to a shopping mall. The mall building (the shell)
-provides the entrance, the floors, the escalators. But each store inside operates
-independently. The shoe store doesn't need to close because the electronics store
-is renovating. Each store has its own staff, décor, and inventory system.
+Think of a shopping mall. The mall building (the **shell**) provides the entrance, floors, and escalators. But each store inside operates independently — the shoe store doesn't close because the electronics store is renovating. Each store has its own staff and inventory system.
 
-Micro frontend architecture is the same idea applied to a web app.
+**Micro frontend architecture applies this to a web app.**
 
-Instead of ONE big React app where all teams work in the same codebase, you split
-the UI into smaller, independently owned apps — each called a Micro Frontend (MFE).
-A container/shell app ties them all together visually into one seamless experience.
+Instead of one big React app where all teams work in the same codebase, you split the UI into smaller, independently owned apps — each called a **Micro Frontend (MFE)**. A container/shell ties them into one seamless UI.
 
-CONCRETE EXAMPLE — An e-commerce site:
-  shell / container    →  layout, navigation bar, auth, routing
-  /products            →  product listing, search, filters     (Team A)
-  /cart                →  cart, checkout flow                  (Team B)
-  /account             →  profile, order history               (Team C)
-  /promotions          →  banners, deals, recommendations      (Team D)
+**Concrete example — e-commerce site:**
 
-Each team:
-  - Has its own Git repo
-  - Deploys independently
-  - Can use their own tech stack
-  - Can release without coordinating with other teams
+| Route | Responsibility | Owner |
+|---|---|---|
+| shell / container | layout, nav, auth, routing | Platform team |
+| /products | product listing, search, filters | Team A |
+| /cart | cart, checkout flow | Team B |
+| /account | profile, order history | Team C |
+| /promotions | banners, deals, recommendations | Team D |
 
-The user sees one app. Behind the scenes, it's 4-5 apps stitched together.
+Each team has its own Git repo, deploys independently, can use their own tech stack, and releases without coordinating with other teams. The user sees one app — behind the scenes it's 4–5 separate apps.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-2. WHY WOULD YOU CHOOSE MFE OVER A MONOLITH?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-Q: We have a large React app. What problems would MFE architecture solve for us?
+## Q2: We have a large React app. What problems would MFE solve for us?
 
-A:
-This is the right question to ask first. MFE is not a technical upgrade — it solves
-ORGANIZATIONAL problems. Here are the pain points that push teams toward MFE:
+MFE is **not a technical upgrade** — it solves **organizational problems**.
 
-PAIN POINT 1 — "Our repo is a battlefield"
-  50 engineers in one frontend repo = constant merge conflicts, giant PRs,
-  someone's change breaks someone else's feature. No one fully understands the codebase.
-  → MFE: each team has its own repo. Zero contention between teams.
+**Pain point 1 — "Our repo is a battlefield"**
+50 engineers in one frontend repo = constant merge conflicts, giant PRs, someone's change breaks someone else's feature.
+→ MFE: each team has its own repo. Zero contention between teams.
 
-PAIN POINT 2 — "We can't release without everyone being ready"
-  Team A is ready to ship, but Team B has a half-done feature.
-  The whole frontend is held hostage until everyone is green.
-  → MFE: Team A deploys their MFE. Team B deploys when they're ready. Fully independent.
+**Pain point 2 — "We can't release without everyone being ready"**
+Team A is ready to ship but Team B has a half-done feature. Everyone waits.
+→ MFE: Team A deploys their MFE independently. Fully decoupled.
 
-PAIN POINT 3 — "We need to migrate off Angular but can't rewrite everything"
-  A big-bang rewrite is too risky. But you can't run two apps side-by-side... or can you?
-  → MFE: New features are built in React. Old screens stay in Angular. User never notices.
-  This is called the Strangler Fig pattern — old code dies piece by piece.
+**Pain point 3 — "We need to migrate off Angular but can't rewrite everything"**
+→ MFE: New features in React. Old screens stay in Angular. This is the **Strangler Fig pattern** — old code dies piece by piece.
 
-PAIN POINT 4 — "One team's bug brought down the whole app"
-  In a monolith, a JS runtime error can crash the entire page.
-  → MFE: The faulty MFE shows an error boundary. Other MFEs keep working.
+**Pain point 4 — "One team's bug brought down the whole app"**
+→ MFE: The failing MFE shows an error boundary. Other MFEs keep working.
 
-PAIN POINT 5 — "Ownership is unclear"
-  Bug filed on the cart. Whose code is it? Backend? Frontend Team A? Team B?
-  → MFE: Each MFE has a clear owner. Team B owns /cart — end to end.
+**Pain point 5 — "Ownership is unclear"**
+→ MFE: Each MFE has a clear owner. Team B owns `/cart` end to end — backend API and frontend UI.
 
-IMPORTANT COUNTER-POINT:
-  If your team is small (< 8 frontend engineers) and you deploy together anyway,
-  MFE gives you the overhead without the benefit. A monolith with good code splitting
-  is the right answer for most teams.
+> **Counter-point:** If your team is small (< 8 frontend engineers) and you deploy together anyway, MFE gives you overhead without benefit. A well-optimized monolith is the right answer for most teams.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-3. HOW DO YOU ACTUALLY INTEGRATE MULTIPLE MFEs INTO ONE PAGE?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-Q: There are three different ways people talk about integrating MFEs. Can you walk me through them?
+## Q3: What are the different ways to integrate multiple MFEs into one page?
 
-A:
-Yes — the three main strategies are build-time, server-side run-time, and client-side run-time.
+### A) Build-time integration (npm packages)
 
-─────────────────────────────────────────────────────────────
-STRATEGY 1: BUILD-TIME (npm packages)
-─────────────────────────────────────────────────────────────
 Each MFE is published as an npm package. The container installs them like any dependency.
 
-  // container/package.json
-  {
-    "dependencies": {
-      "@acme/products-mfe": "^2.1.0",
-      "@acme/cart-mfe": "^1.5.0"
-    }
+```js
+// container/package.json
+{
+  "dependencies": {
+    "@acme/products-mfe": "^2.1.0",
+    "@acme/cart-mfe": "^1.5.0"
   }
+}
+```
 
-  // container/src/App.js
-  import { ProductsApp } from '@acme/products-mfe';
-  import { CartApp } from '@acme/cart-mfe';
+**Why this is usually wrong:** Every time Products team ships, the container must update `package.json` → `npm install` → rebuild → redeploy. That's not independent deployment — it's just a slower monolith. Use build-time only for shared UI components like a design system.
 
-WHY THIS IS USUALLY WRONG:
-  Every time the Products team ships a change, the container has to:
-  1. Update its package.json
-  2. Run npm install
-  3. Rebuild the entire container
-  4. Re-deploy
+### B) Server-side integration (SSI / Edge composition)
 
-  That's not independent deployment — that's just a slower monolith.
-  Use this only for true shared UI components like a design system.
+The server stitches HTML fragments from multiple services before the browser receives a response.
 
-─────────────────────────────────────────────────────────────
-STRATEGY 2: SERVER-SIDE INTEGRATION (SSI / Edge composition)
-─────────────────────────────────────────────────────────────
-The server stitches together HTML fragments from multiple services before
-the browser receives any response.
+```nginx
+<!-- Nginx SSI -->
+<div id="products">
+  <!--# include virtual="/products-service/fragment" -->
+</div>
+```
 
-  <!-- Nginx SSI directive -->
-  <div id="header">
-    <!--# include virtual="/header-service/fragment" -->
-  </div>
-  <div id="products">
-    <!--# include virtual="/products-service/fragment" -->
-  </div>
+When to use: content-heavy sites (news, landing pages) where SEO matters. Downside: complex infra, harder dynamic interactions.
 
-WHEN TO USE:
-  - Content-heavy sites (news, e-commerce landing pages) where SEO matters
-  - When you want fast first paint with no JS overhead
-  - When MFEs have mostly server-rendered content
+### C) Client-side runtime (most common for React teams)
 
-DOWNSIDE: Complex infra, harder to do dynamic client-side interactions.
+Container fetches and mounts MFEs in the browser at runtime. Three techniques: **Module Federation**, iFrames, Web Components. Module Federation is the industry standard for React teams.
 
-─────────────────────────────────────────────────────────────
-STRATEGY 3: CLIENT-SIDE RUNTIME (most common in React ecosystems)
-─────────────────────────────────────────────────────────────
-The container fetches and mounts MFEs in the browser at runtime.
-Three techniques: Module Federation, iFrames, Web Components.
+---
 
-This is what most teams mean when they say "MFE architecture."
-Module Federation is the industry standard for React teams.
+## Q4: Explain Module Federation. How does it enable micro frontends?
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-4. WHAT IS MODULE FEDERATION AND HOW DOES IT WORK?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Module Federation (Webpack 5) lets one JS app **load code from a completely separate app at runtime** — without build-time coupling.
 
-Q: I keep hearing about Module Federation. Explain it like I'm going to use it tomorrow.
+- **Host (Container):** the app that consumes modules from others
+- **Remote (MFE):** the app that exposes its modules to others
 
-A:
-Module Federation is a Webpack 5 feature that lets one JavaScript application
-load code from a completely separate application at runtime — without them knowing
-about each other at build time.
+### Step 1 — Configure the Remote (Products MFE)
 
-The two sides of the relationship:
+```js
+// products/webpack.config.js
+const { ModuleFederationPlugin } = require('webpack').container;
 
-  HOST (Shell/Container):   the app that CONSUMES code from others
-  REMOTE (MFE):             the app that EXPOSES its code to others
+module.exports = {
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'products',           // unique name — used by the host
+      filename: 'remoteEntry.js', // the file the host will fetch first
 
-─────────────────────────────────────────────────────────────
-SETTING UP THE REMOTE (Products MFE)
-─────────────────────────────────────────────────────────────
+      exposes: {
+        './App': './src/App',
+        './ProductList': './src/components/ProductList',
+      },
 
-  // products/webpack.config.js
-  const { ModuleFederationPlugin } = require('webpack').container;
+      shared: {
+        react:     { singleton: true, requiredVersion: '^18.0.0' },
+        'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
+      },
+    }),
+  ],
+};
+```
 
-  module.exports = {
-    plugins: [
-      new ModuleFederationPlugin({
-        name: 'products',            // unique name — used by the host
-        filename: 'remoteEntry.js', // the file the host will load first
+Products MFE deploys to `https://cdn.acme.com/products/remoteEntry.js`. It doesn't know about the container at all.
 
-        exposes: {
-          // what this MFE is willing to share
-          './App':         './src/App',
-          './ProductList': './src/components/ProductList',
-        },
+### Step 2 — Configure the Host (Container)
 
-        shared: {
-          react:     { singleton: true, requiredVersion: '^18.0.0' },
-          'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
-        },
-      }),
-    ],
-  };
+```js
+// container/webpack.config.js
+new ModuleFederationPlugin({
+  name: 'container',
 
-The Products MFE is now deployed to: https://cdn.acme.com/products/remoteEntry.js
-It doesn't care about the container at all. It just runs and exposes itself.
-
-─────────────────────────────────────────────────────────────
-SETTING UP THE HOST (Container)
-─────────────────────────────────────────────────────────────
-
-  // container/webpack.config.js
-  new ModuleFederationPlugin({
-    name: 'container',
-
-    remotes: {
-      // alias: 'remoteName@URL_to_its_remoteEntry.js'
-      products: 'products@https://cdn.acme.com/products/remoteEntry.js',
-      cart:     'cart@https://cdn.acme.com/cart/remoteEntry.js',
-    },
-
-    shared: {
-      react:     { singleton: true, requiredVersion: '^18.0.0' },
-      'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
-    },
-  })
-
-─────────────────────────────────────────────────────────────
-USING THE REMOTE MODULE IN CONTAINER
-─────────────────────────────────────────────────────────────
-
-  // container/src/App.js
-  import React, { Suspense } from 'react';
-
-  // This import looks local but it hits the network at runtime
-  const ProductsApp = React.lazy(() => import('products/App'));
-  const CartApp     = React.lazy(() => import('cart/App'));
-
-  export default function App() {
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <ProductsApp />
-      </Suspense>
-    );
-  }
-
-─────────────────────────────────────────────────────────────
-WHAT HAPPENS AT RUNTIME (step by step)
-─────────────────────────────────────────────────────────────
-
-  1. Browser loads container's main bundle
-  2. User navigates to /products
-  3. React.lazy triggers → browser fetches remoteEntry.js from CDN
-  4. remoteEntry.js is a manifest: "here are my modules, here are my chunks"
-  5. Browser negotiates shared dependencies (React) — only loads once
-  6. Browser fetches the actual ProductsApp chunk
-  7. ProductsApp renders inside the container's Suspense boundary
-
-The Products team can deploy a new version of their MFE.
-The container picks it up automatically — no rebuild, no redeploy.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-5. WHAT IS remoteEntry.js AND WHY DOES IT MATTER?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Q: What exactly is remoteEntry.js? I see it mentioned everywhere.
-
-A:
-remoteEntry.js is the manifest/entry point that a remote MFE exposes.
-It is a small JavaScript file that tells the host:
-
-  - "Here are the modules I expose"             (./App, ./ProductList)
-  - "Here are my chunk file names and hashes"   (for cache busting)
-  - "Here are the shared dependencies I need"   (react@18.2.0)
-
-Think of it as a table of contents for the MFE.
-
-WHAT IT LOOKS LIKE (simplified):
-  var products;           // global variable matching the 'name' in config
-  products = {
-    get: (module) => {   // host calls this to get a specific exposed module
-      if (module === './App') return () => import('./src_App.chunk.js');
-    },
-    init: (shareScope) => { /* negotiate shared deps */ }
-  };
-
-WHY IT MATTERS FOR CACHING:
-  remoteEntry.js should NOT be cached (or have a very short TTL).
-  The chunks it points to CAN be cached aggressively (they're content-hashed).
-
-  Strategy:
-    remoteEntry.js         → Cache-Control: no-cache, must-revalidate
-    products.abc123.js     → Cache-Control: max-age=31536000 (1 year)
-
-  This way, when the Products team deploys:
-  - Browser always fetches fresh remoteEntry.js (tiny file)
-  - Gets new chunk hashes
-  - Only downloads changed chunks; unchanged chunks hit the cache
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-6. SHARED MODULES — WHAT THEY ARE AND HOW VERSIONING WORKS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Q: Explain shared modules in Module Federation. How does versioning work between MFEs?
-
-A:
-This is one of the most important and misunderstood parts of MFE architecture.
-
-─────────────────────────────────────────────────────────────
-THE PROBLEM SHARED MODULES SOLVE
-─────────────────────────────────────────────────────────────
-Without shared modules, every MFE bundles its own copy of React.
-
-  container bundle:    React 18.2 (200KB)
-  products bundle:     React 18.2 (200KB)
-  cart bundle:         React 18.2 (200KB)
-
-The user downloads React THREE times. 600KB wasted.
-Worse: three separate React instances running = hooks break across MFE boundaries.
-
-─────────────────────────────────────────────────────────────
-HOW SHARED MODULES WORK
-─────────────────────────────────────────────────────────────
-Each MFE declares what it wants to share in the webpack config:
-
-  // In EVERY MFE and the container
-  shared: {
-    react: {
-      singleton: true,
-      requiredVersion: '^18.0.0',
-    },
-    'react-dom': {
-      singleton: true,
-      requiredVersion: '^18.0.0',
-    },
-    'react-router-dom': {
-      singleton: true,
-      requiredVersion: '^6.0.0',
-    },
-  }
-
-At runtime, Module Federation runs a "negotiation" step:
-  1. Each MFE announces: "I need react@18.2.0"
-  2. Module Federation picks the HIGHEST compatible version
-  3. That one version is loaded. All MFEs use the same instance.
-
-─────────────────────────────────────────────────────────────
-VERSION NEGOTIATION RULES
-─────────────────────────────────────────────────────────────
-Module Federation uses semver ranges to decide compatibility.
-
-  container needs:  react ^18.0.0    (has 18.2.0 installed)
-  products needs:   react ^18.0.0    (has 18.3.0 installed)
-  cart needs:       react ^18.0.0    (has 18.1.0 installed)
-
-  → Module Federation picks 18.3.0 (highest compatible)
-  → All three MFEs use react@18.3.0
-  → react@18.1.0 and react@18.2.0 are NOT downloaded at all
-
-  container needs:  react ^17.0.0    (has 17.0.2)
-  products needs:   react ^18.0.0    (has 18.2.0)
-
-  → 17 and 18 are NOT compatible (different major versions)
-  → Two separate React instances are loaded
-  → Hooks and Context BREAK between them — this is a problem (see Q7)
-
-─────────────────────────────────────────────────────────────
-THE SHARED CONFIG OPTIONS EXPLAINED
-─────────────────────────────────────────────────────────────
+  remotes: {
+    // alias: 'remoteName@URL_to_remoteEntry.js'
+    products: 'products@https://cdn.acme.com/products/remoteEntry.js',
+    cart:     'cart@https://cdn.acme.com/cart/remoteEntry.js',
+  },
 
   shared: {
-    react: {
-      singleton: true,
-      // Only one instance allowed. If two incompatible versions are needed,
-      // throw a warning rather than silently loading two copies.
+    react:     { singleton: true, requiredVersion: '^18.0.0' },
+    'react-dom': { singleton: true, requiredVersion: '^18.0.0' },
+  },
+})
+```
 
-      requiredVersion: '^18.0.0',
-      // The semver range this MFE needs. Used to check compatibility
-      // against what other MFEs declare.
+### Step 3 — Use the remote module in the container
 
-      strictVersion: false,
-      // false (default): warn in console if version mismatch, but keep going
-      // true: throw a hard error if an incompatible version is used
+```js
+// container/src/App.js
+import React, { Suspense } from 'react';
 
-      eager: false,
-      // false (default): React is loaded lazily when first needed
-      // true: React is bundled into the initial chunk (use for the host only)
+// Looks like a local import — hits the network at runtime
+const ProductsApp = React.lazy(() => import('products/App'));
+const CartApp     = React.lazy(() => import('cart/App'));
 
-      version: '18.2.0',
-      // Override the detected version. Rarely needed — usually auto-detected
-      // from node_modules.
-    }
+export default function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductsApp />
+    </Suspense>
+  );
+}
+```
+
+### What happens at runtime (step by step)
+
+1. Browser loads container's main bundle
+2. User navigates to `/products`
+3. `React.lazy` triggers → browser fetches `remoteEntry.js` from CDN
+4. `remoteEntry.js` is a manifest: "here are my modules and chunks"
+5. Browser negotiates shared deps (React) — **only one copy loaded**
+6. Browser fetches the actual ProductsApp chunk
+7. ProductsApp renders inside container's Suspense boundary
+
+Products team deploys a new version → container picks it up automatically. No container rebuild. No container redeploy.
+
+---
+
+## Q5: What exactly is remoteEntry.js and why does it matter?
+
+`remoteEntry.js` is the **manifest/entry point** a remote MFE exposes. It's a small JS file that tells the host:
+- "Here are the modules I expose" → `./App`, `./ProductList`
+- "Here are my chunk file names and hashes" → for cache busting
+- "Here are the shared dependencies I need" → `react@18.2.0`
+
+Think of it as a **table of contents** for the MFE.
+
+```js
+// Simplified shape of what remoteEntry.js does
+var products = {
+  get: (module) => {
+    if (module === './App') return () => import('./src_App.chunk.js');
+  },
+  init: (shareScope) => { /* negotiate shared deps */ }
+};
+```
+
+### Caching strategy (critical)
+
+```
+remoteEntry.js       →  Cache-Control: no-cache, must-revalidate
+products.abc123.js   →  Cache-Control: max-age=31536000  (1 year)
+```
+
+When Products team deploys, the browser always fetches a fresh `remoteEntry.js` (tiny file), gets new chunk hashes, and only downloads **changed** chunks — unchanged ones hit the CDN cache.
+
+---
+
+## Q6: Explain shared modules. How does versioning work between MFEs?
+
+### The problem shared modules solve
+
+Without shared modules, every MFE bundles its own React:
+
+```
+container bundle:  React 18.2  (200KB)
+products bundle:   React 18.2  (200KB)
+cart bundle:       React 18.2  (200KB)
+```
+
+The user downloads React **three times** (600KB wasted). Worse — three separate React instances running = **hooks break across MFE boundaries**.
+
+### How shared modules work
+
+Declare `shared` in **every** MFE and the container:
+
+```js
+shared: {
+  react: {
+    singleton: true,
+    requiredVersion: '^18.0.0',
+  },
+  'react-dom': {
+    singleton: true,
+    requiredVersion: '^18.0.0',
+  },
+  'react-router-dom': {
+    singleton: true,
+    requiredVersion: '^6.0.0',
+  },
+}
+```
+
+At runtime, Module Federation runs a **negotiation** step:
+1. Each MFE announces: "I need `react@18.2.0`"
+2. Module Federation picks the **highest compatible version**
+3. That one version loads. All MFEs use the same instance.
+
+### Version negotiation rules
+
+```
+container: react ^18.0.0  (has 18.2.0)
+products:  react ^18.0.0  (has 18.3.0)
+cart:      react ^18.0.0  (has 18.1.0)
+→ Picks 18.3.0. Versions 18.1 and 18.2 are never downloaded.
+
+container: react ^17.0.0  (has 17.0.2)
+products:  react ^18.0.0  (has 18.2.0)
+→ 17 and 18 are INCOMPATIBLE (different majors)
+→ Two React instances loaded → hooks and Context break (see Q7)
+```
+
+### All shared config options explained
+
+```js
+shared: {
+  react: {
+    singleton: true,
+    // Only one instance allowed. If incompatible versions exist,
+    // warn rather than silently loading two copies.
+
+    requiredVersion: '^18.0.0',
+    // Semver range this MFE needs. Used to check compatibility
+    // against what other MFEs declare.
+
+    strictVersion: false,
+    // false (default): console.warn on mismatch, keep going
+    // true: throw a hard error if incompatible version is loaded
+
+    eager: false,
+    // false (default): React loaded lazily when first needed
+    // true: bundle React into the initial chunk
+    //       Use eager: true only in the HOST/container, not remotes
   }
+}
+```
 
-─────────────────────────────────────────────────────────────
-WHAT CAN YOU SHARE? (not just React)
-─────────────────────────────────────────────────────────────
-Anything in node_modules can be shared. Commonly shared:
+### What to share (and what not to)
 
-  react, react-dom              → must be singleton (hooks requirement)
-  react-router-dom              → should be singleton (single history object)
-  @tanstack/react-query         → should be singleton (single cache)
-  styled-components / emotion   → should be singleton (style injection)
-  @company/design-system        → your shared UI component library
-  @company/auth-utils           → shared auth helpers
-  lodash / date-fns             → optional, fine to duplicate if small
+| Library | Share? | Why |
+|---|---|---|
+| `react`, `react-dom` | Must (singleton) | Hooks requirement |
+| `react-router-dom` | Should (singleton) | Single history object |
+| `@tanstack/react-query` | Should (singleton) | Single cache instance |
+| `styled-components` / `emotion` | Should (singleton) | Single style injection context |
+| `@company/design-system` | Yes | Shared UI components, size savings |
+| `lodash` / `date-fns` | Optional | Tree-shakeable, fine to duplicate |
 
-DO NOT share everything blindly. Sharing creates coupling.
-A change to a shared lib version forces all MFEs to negotiate.
-Only share what truly must be a singleton or is large enough to justify it.
+> **Don't share everything blindly.** Sharing = coupling. Only share what must be a singleton or is large enough to justify it.
 
-─────────────────────────────────────────────────────────────
-INTERNAL SHARED LIBRARY VERSIONING
-─────────────────────────────────────────────────────────────
-Your own shared packages (design system, auth utils) need a versioning strategy.
+### Versioning strategies for your own shared packages
 
-OPTION A — Semver with npm (most common)
-  Publish @company/design-system to a private npm registry (Artifactory, GitHub Packages).
-  Each MFE pins a version range.
+**Option A — Semver + private npm registry (most common)**
+Publish `@company/design-system` to Artifactory / GitHub Packages. Each MFE pins a version range. Teams upgrade on their own schedule. Downside: breaking changes require each team to upgrade independently.
 
-  MFE team controls when they upgrade — no forced upgrades.
-  Downside: breaking changes require each team to upgrade independently.
+**Option B — Floating "latest" (fast, risky)**
+Always load the latest version. Any breaking change immediately affects all MFEs. Use only for stable, backward-compatible utilities.
 
-OPTION B — Floating "latest" (fast, risky)
-  Always load the latest version. No version numbers in config.
-  Any breaking change in the design system immediately breaks all MFEs.
-  Only use this for truly stable, backward-compatible utilities.
+**Option C — Expose via Module Federation from container (most integrated)**
 
-OPTION C — Expose via Module Federation (most integrated)
-  The container exposes the design system as a shared module.
-  All MFEs get it from the container at runtime — one copy, always in sync.
+```js
+// container webpack config
+exposes: {
+  './DesignSystem': './src/design-system/index.js',
+  './auth':         './src/auth/index.js',
+}
 
-  // container exposes it
-  exposes: { './DesignSystem': './src/design-system/index.js' }
+// Any MFE consumes it
+import { Button, Modal } from 'container/DesignSystem';
+import { authService }   from 'container/auth';
+```
 
-  // MFEs consume it
-  import { Button } from 'container/DesignSystem';
+Risk: a breaking change in the design system breaks all MFEs simultaneously. Only use with a stable, well-tested design system.
 
-  Risk: design system breaking change = all MFEs broken simultaneously.
-  Use with a stable, well-tested design system only.
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-7. WHAT HAPPENS WHEN TWO MFEs NEED DIFFERENT VERSIONS OF A SHARED LIB?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## Q7: What happens if the container is on React 18 but one MFE is still on React 17?
 
-Q: What actually happens if the container is on React 18 but one MFE is still on React 17?
+**Scenario:**
+```
+container: react@18.2.0, requiredVersion: '^18.0.0'
+cart-mfe:  react@17.0.2, requiredVersion: '^17.0.0'
+```
 
-A:
-This is a real scenario during migrations. Here's exactly what happens and your options.
+**Without `singleton: true`:** Both versions are downloaded and run in the same tab. Two React runtimes breaks `useContext`, `ReactDOM.createRoot`, Error Boundaries, and React DevTools.
 
-SCENARIO:
-  container: react@18.2.0, requiredVersion: '^18.0.0'
-  cart-mfe:  react@17.0.2, requiredVersion: '^17.0.0'
+**With `singleton: true` (recommended):** Module Federation picks React 18 (higher version). Cart MFE runs on React 18 under the hood. React 18 is backwards compatible in most cases. You get a console warning: *"Shared module react@17.0.2 is not a singleton..."*
 
-RESULT WITHOUT singleton:true:
-  Both versions are downloaded and run in the same browser tab.
-  Two React runtimes. This breaks:
-  - React.createContext / useContext (cart MFE context invisible to container)
-  - ReactDOM.createRoot (may error)
-  - React DevTools (confused by two instances)
-  - Error boundaries across MFE boundaries
+### How to handle the migration
 
-RESULT WITH singleton:true (recommended):
-  Module Federation picks one version (usually the higher one — React 18).
-  The React 17 MFE runs on React 18 under the hood.
-  React 18 is backwards compatible with React 17 code in most cases,
-  so this often just works. You get a console warning:
-  "Shared module react@17.0.2 is not a singleton..."
+**Phase 1 — Keep both working during transition**
 
-HOW TO HANDLE THE MIGRATION PROPERLY:
+Remove React from `shared` config for the legacy MFE temporarily. It bundles its own React 17 (adds bundle size — acceptable short-term). Container and other MFEs share React 18 normally.
 
-  Phase 1: Keep both working during transition
-    - Remove React from shared for the legacy MFE temporarily
-    - It bundles its own React 17 (adds bundle size, breaks cross-MFE context — acceptable short-term)
-    - Container and other MFEs share React 18 normally
+**Phase 2 — Upgrade the legacy MFE**
 
-  Phase 2: Upgrade the legacy MFE to React 18
-    - React 18 upgrade is mostly non-breaking (remove React.render → createRoot)
-    - Add React back to shared config
-    - Back to one React instance
+React 18 upgrade is mostly non-breaking (`React.render` → `createRoot`). Add React back to shared config. Back to one React instance.
 
-  Phase 3: Done — all MFEs on React 18
+> **Key insight:** Never keep mixed major versions long-term. The bugs are subtle and hard to trace. Treat a React version gap as tech debt with a deadline.
 
-KEY INSIGHT:
-  Never keep mixed major versions of React long-term. The breakage is subtle and
-  hard to debug. Treat a React version gap as tech debt with a deadline.
+---
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-8. HOW DOES ROUTING WORK ACROSS MFEs?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## Q8: Who controls the URL? How does routing work across MFEs?
 
-Q: If I have a container and multiple MFEs, who controls the URL? Who handles routing?
+There are **two distinct levels**. Getting this wrong causes subtle URL bugs.
 
-A:
-Routing in MFE has two distinct levels. Getting this wrong causes subtle bugs.
+### Level 1 — Top-level routing (Container owns this)
 
-─────────────────────────────────────────────────────────────
-LEVEL 1: TOP-LEVEL ROUTING (Container owns this)
-─────────────────────────────────────────────────────────────
-The shell/container decides which MFE to show based on the URL path.
-It uses BrowserRouter because it needs to own the real browser history.
+The shell uses `BrowserRouter` because it needs to own the real browser history.
 
-  // container/src/App.js
-  import { BrowserRouter, Routes, Route } from 'react-router-dom';
-  const ProductsApp = React.lazy(() => import('products/App'));
-  const CartApp     = React.lazy(() => import('cart/App'));
+```js
+// container/src/App.js
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-  export default function App() {
-    return (
-      <BrowserRouter>
-        <Header />
-        <Suspense fallback={<PageSkeleton />}>
-          <Routes>
-            <Route path="/products/*" element={<ProductsApp />} />
-            <Route path="/cart/*"     element={<CartApp />} />
-            <Route path="/account/*"  element={<AccountApp />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    );
-  }
+const ProductsApp = React.lazy(() => import('products/App'));
+const CartApp     = React.lazy(() => import('cart/App'));
 
-Note the /* — this tells React Router "pass remaining path segments to the MFE."
-
-─────────────────────────────────────────────────────────────
-LEVEL 2: INTERNAL MFE ROUTING (Each MFE owns its sub-routes)
-─────────────────────────────────────────────────────────────
-Each MFE handles its own sub-routes — /products/123, /products/search, etc.
-
-WRONG: Using BrowserRouter inside an MFE
-  If the MFE creates its own BrowserRouter, it creates a second history instance.
-  Two history objects fighting over the URL = unpredictable back button behavior.
-
-RIGHT: Use MemoryRouter inside the MFE
-  MemoryRouter keeps routing state in memory, not in the browser URL.
-  The container's BrowserRouter owns the real URL. The MFE handles
-  logical sub-navigation internally without touching the browser bar.
-
-  // products/src/App.js
-  import { MemoryRouter, Routes, Route } from 'react-router-dom';
-
-  export default function ProductsApp() {
-    return (
-      <MemoryRouter initialEntries={['/']}>
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Header />
+      <Suspense fallback={<PageSkeleton />}>
         <Routes>
-          <Route path="/"         element={<ProductList />} />
-          <Route path="/:id"      element={<ProductDetail />} />
-          <Route path="/search"   element={<SearchResults />} />
+          {/* /* tells React Router to pass remaining segments to the MFE */}
+          <Route path="/products/*" element={<ProductsApp />} />
+          <Route path="/cart/*"     element={<CartApp />} />
+          <Route path="/account/*"  element={<AccountApp />} />
         </Routes>
-      </MemoryRouter>
-    );
+      </Suspense>
+    </BrowserRouter>
+  );
+}
+```
+
+### Level 2 — Internal MFE routing (Each MFE owns its sub-routes)
+
+**Wrong:** Using `BrowserRouter` inside an MFE creates a second history instance. Two history objects fighting over the URL = unpredictable back-button behavior.
+
+**Right:** Use `MemoryRouter` inside MFEs. It keeps routing state in memory, not in the browser URL. The container's `BrowserRouter` owns the real URL.
+
+```js
+// products/src/App.js
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+
+export default function ProductsApp() {
+  return (
+    <MemoryRouter initialEntries={['/']}>
+      <Routes>
+        <Route path="/"       element={<ProductList />} />
+        <Route path="/:id"    element={<ProductDetail />} />
+        <Route path="/search" element={<SearchResults />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+```
+
+### How MFEs trigger navigation to other MFEs
+
+An MFE should **never** import the container's router. Fire a custom event instead:
+
+```js
+// Inside products MFE — user clicks "Go to Cart"
+window.dispatchEvent(new CustomEvent('mfe:navigate', {
+  detail: { path: '/cart' }
+}));
+
+// Container listens and uses its own router
+window.addEventListener('mfe:navigate', (e) => {
+  navigate(e.detail.path); // container's react-router navigate()
+});
+```
+
+---
+
+## Q9: How do MFEs communicate with each other?
+
+**Golden rule: MFEs must not directly import each other.** If products imports cart, you've coupled two teams' codebases — defeats the purpose.
+
+### Pattern 1 — Props from container (parent → child)
+
+Best for data the container already has (user info, feature flags).
+
+```js
+<ProductsApp
+  userId={currentUser.id}
+  onAddToCart={(item) => cartService.add(item)}
+  featureFlags={flags}
+/>
+```
+
+### Pattern 2 — Custom DOM events (pub-sub)
+
+Best for sibling MFEs communicating without knowing about each other.
+
+```js
+// auth MFE fires on login
+window.dispatchEvent(new CustomEvent('auth:login', {
+  bubbles: true,
+  detail: { userId: '123', name: 'Veerendra' }
+}));
+
+// cart MFE listens — doesn't know who fired the event
+window.addEventListener('auth:login', (event) => {
+  loadUserCart(event.detail.userId);
+});
+
+// header MFE also listens independently
+window.addEventListener('auth:login', (event) => {
+  showUserAvatar(event.detail.name);
+});
+```
+
+**Naming convention** (prevents collisions): prefix with the MFE name — `auth:login`, `cart:item-added`, `shell:theme-changed`.
+
+### Pattern 3 — Shared singleton service
+
+A service object shared via Module Federation's singleton mechanism. All MFEs get the same instance.
+
+```js
+// @company/auth-service/index.js
+class AuthService {
+  constructor() {
+    this._user = null;
+    this._listeners = [];
   }
-
-─────────────────────────────────────────────────────────────
-HOW MFEs TRIGGER NAVIGATION TO OTHER MFEs
-─────────────────────────────────────────────────────────────
-An MFE should never import the container's router. Instead, it fires an event:
-
-  // Inside products MFE — user clicks "Go to Cart"
-  window.dispatchEvent(new CustomEvent('mfe:navigate', {
-    detail: { path: '/cart' }
-  }));
-
-  // Container listens and uses its own router
-  window.addEventListener('mfe:navigate', (e) => {
-    navigate(e.detail.path);   // container's react-router navigate()
-  });
-
-This keeps the MFE completely decoupled from the container's routing implementation.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-9. HOW DO MFEs TALK TO EACH OTHER?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Q: If the cart MFE needs to know the user just logged in (which is handled by the auth MFE),
-   how do they communicate?
-
-A:
-The golden rule: MFEs should not directly import each other.
-If products imports cart, you've just coupled two teams' codebases — defeats the purpose.
-
-─────────────────────────────────────────────────────────────
-PATTERN 1: PROPS FROM CONTAINER (parent to child)
-─────────────────────────────────────────────────────────────
-Container passes data down to an MFE like any React component.
-Best for: data the container already has (user info, feature flags).
-
-  // container mounts the MFE and passes what it knows
-  <ProductsApp
-    userId={currentUser.id}
-    onAddToCart={(item) => cartService.add(item)}
-    featureFlags={flags}
-  />
-
-─────────────────────────────────────────────────────────────
-PATTERN 2: CUSTOM DOM EVENTS (the pub-sub approach)
-─────────────────────────────────────────────────────────────
-Best for: sibling MFEs communicating without knowing about each other.
-
-  // auth MFE fires an event when user logs in
-  window.dispatchEvent(new CustomEvent('auth:login', {
-    bubbles: true,
-    detail: { userId: '123', name: 'Veerendra' }
-  }));
-
-  // cart MFE listens — it doesn't know who fired this event
-  window.addEventListener('auth:login', (event) => {
-    loadUserCart(event.detail.userId);
-  });
-
-  // header MFE also listens
-  window.addEventListener('auth:login', (event) => {
-    showUserAvatar(event.detail.name);
-  });
-
-NAMING CONVENTION (prevents collisions):
-  'auth:login'          → auth MFE fires this
-  'cart:item-added'     → cart MFE fires this
-  'shell:theme-changed' → container fires this
-
-  Prefix with the MFE name. Any team can listen, none need to coordinate.
-
-─────────────────────────────────────────────────────────────
-PATTERN 3: SHARED SINGLETON SERVICE
-─────────────────────────────────────────────────────────────
-A service object shared via Module Federation's singleton mechanism.
-Because Module Federation guarantees one instance, all MFEs see the same state.
-
-  // @company/auth-service/index.js (published package or exposed by container)
-  class AuthService {
-    constructor() {
-      this._user = null;
-      this._listeners = [];
-    }
-    setUser(user) {
-      this._user = user;
-      this._listeners.forEach(fn => fn(user));
-    }
-    getUser()              { return this._user; }
-    onUserChange(fn)       { this._listeners.push(fn); return () => {
-      this._listeners = this._listeners.filter(l => l !== fn); // unsubscribe
-    }; }
+  setUser(user) {
+    this._user = user;
+    this._listeners.forEach(fn => fn(user));
   }
+  getUser() { return this._user; }
+  onChange(fn) {
+    this._listeners.push(fn);
+    return () => { this._listeners = this._listeners.filter(l => l !== fn); };
+  }
+}
 
-  export const authService = new AuthService();  // singleton instance
+export const authService = new AuthService(); // singleton instance
+```
 
-  // Products MFE
-  import { authService } from '@company/auth-service';
-  const user = authService.getUser();
-  authService.onUserChange((u) => setCurrentUser(u));
+```js
+// Any MFE
+import { authService } from '@company/auth-service';
+const unsubscribe = authService.onChange(user => setCurrentUser(user));
+```
 
-─────────────────────────────────────────────────────────────
-PATTERN 4: URL / QUERY PARAMS (simplest, most durable)
-─────────────────────────────────────────────────────────────
+### Pattern 4 — URL / query params (simplest, most durable)
+
 Put shared state in the URL. Any MFE can read it. Survives page refresh.
+`/products?userId=123&category=shoes&page=2`
 
-  /products?userId=123&category=shoes
+### Which pattern to choose?
 
-Best for: search state, filters, navigation context.
-Not for: sensitive data like tokens.
+| Scenario | Pattern |
+|---|---|
+| Container passing data to a specific MFE | Props |
+| Sibling MFEs, loose coupling, one fires many listen | Custom events |
+| Auth/user state, needs reactivity + getter | Singleton service |
+| Navigation state, shareable links, filters | URL params |
 
-─────────────────────────────────────────────────────────────
-WHICH PATTERN TO CHOOSE?
-─────────────────────────────────────────────────────────────
+---
 
-  Props from container    →  container needs to pass data to a specific MFE
-  Custom events           →  sibling MFEs, loose coupling, one fires many listen
-  Singleton service       →  auth/user state, needs reactivity and getter
-  URL params              →  navigation state, shareable links, filters
+## Q10: The header MFE needs to show cart count — that state is in cart MFE. How?
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-10. HOW DO YOU SHARE STATE ACROSS MFEs?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Wrong answer:** One global Redux store. That recreates monolith coupling — every team depends on the same store shape.
 
-Q: What if the header MFE needs to show the cart count? That's state owned by the cart MFE.
+**Right approach:** Cart MFE owns its state and fires an event when it changes.
 
-A:
-This is the question that reveals if someone truly understands MFE trade-offs.
+```js
+// Inside cart MFE
+const addItem = (item) => {
+  const updatedCart = [...cartItems, item];
+  setCartItems(updatedCart);
 
-WRONG ANSWER: Just use Redux globally.
-  If you have one global Redux store shared across all MFEs, you've recreated the
-  monolith's coupling problem — just with a different technology. Every team now
-  depends on the same store shape.
+  window.dispatchEvent(new CustomEvent('cart:updated', {
+    detail: { count: updatedCart.length }
+  }));
+};
+```
 
-RIGHT APPROACH: Minimal sharing, the right tool per type.
-
-─────────────────────────────────────────────────────────────
-THE CART COUNT PROBLEM — SOLVED
-─────────────────────────────────────────────────────────────
-The cart MFE owns the cart state. When items change, it fires an event:
-
-  // Inside cart MFE
-  const addItem = (item) => {
-    const updatedCart = [...cartItems, item];
-    setCartItems(updatedCart);
-    window.dispatchEvent(new CustomEvent('cart:updated', {
-      detail: { count: updatedCart.length }
-    }));
-  };
-
-  // Header MFE listens
+```js
+// Header MFE listens
+function CartBadge() {
   const [cartCount, setCartCount] = useState(0);
+
   useEffect(() => {
     const handler = (e) => setCartCount(e.detail.count);
     window.addEventListener('cart:updated', handler);
     return () => window.removeEventListener('cart:updated', handler);
   }, []);
 
-The cart MFE doesn't know about the header MFE. The header MFE doesn't need to
-reach into the cart's state. Clean, decoupled, observable.
+  return <span>{cartCount}</span>;
+}
+```
 
-─────────────────────────────────────────────────────────────
-GUIDELINES FOR SHARED STATE
-─────────────────────────────────────────────────────────────
+Cart MFE doesn't know about the header. Header doesn't reach into cart's state. Clean and decoupled.
 
-  Auth / user identity     → Singleton service + events (or httpOnly cookie + server)
-  Cart count / badge       → Events from cart MFE, header listens
-  Current route            → Browser URL (owned by container)
-  Feature flags            → Container fetches, passes via props or shared service
-  User preferences         → localStorage (any MFE can read; storage events for reactivity)
-  Server-persisted data    → Each MFE fetches from its own API (no sharing needed)
+### Guidelines for shared state
 
-─────────────────────────────────────────────────────────────
-THE REAL RULE
-─────────────────────────────────────────────────────────────
-If two MFEs need to share a lot of state constantly, they probably belong in the
-same MFE. Frequent state sharing is a signal of wrong domain boundaries.
+| State type | Strategy |
+|---|---|
+| Auth / user identity | Singleton service + events (or httpOnly cookie) |
+| Cart count / badge | Events from cart MFE, header listens |
+| Current route | Browser URL (owned by container) |
+| Feature flags | Container fetches, passes via props |
+| User preferences | `localStorage` + storage event for reactivity |
+| Server-persisted data | Each MFE fetches from its own API — no sharing needed |
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-11. HOW DO YOU HANDLE AUTHENTICATION?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> **Key rule:** If two MFEs constantly share a lot of state, they probably belong in the same MFE. Frequent state sharing = wrong domain boundaries.
 
-Q: If a user logs in on the auth MFE, how does the products MFE know they're logged in?
+---
 
-A:
-Auth is always owned by the container/shell. MFEs should never handle the login flow.
+## Q11: If a user logs in on the auth MFE, how does the products MFE know?
 
-THE FLOW:
-  1. User hits the app unauthenticated
-  2. Container detects this (no token, 401 from API)
-  3. Container redirects to IdP (Auth0, Okta, Cognito) or shows login MFE
-  4. Login completes → token returned to container
-  5. Container stores token + exposes user info to MFEs
+Auth is **always owned by the container/shell**. MFEs should never handle the login flow.
 
-HOW MFEs ACCESS AUTH:
+**The flow:**
+1. User hits the app unauthenticated
+2. Container detects this (no token / 401 from API)
+3. Container redirects to IdP (Auth0, Okta, Cognito)
+4. Login completes → token returned to container
+5. Container stores token + exposes user info to MFEs
 
-  Option A — Container exposes an auth module (Module Federation)
-    // shell/src/auth/index.js  (exposed in shell's webpack config)
-    let _user = null;
-    let _token = null;
-    const listeners = [];
+### Option A — Container exposes an auth module (Module Federation)
 
-    export const authService = {
-      init(user, token) {
-        _user = user; _token = token;
-        listeners.forEach(fn => fn(user));
-      },
-      getUser()   { return _user; },
-      getToken()  { return _token; },
-      onChange(fn) { listeners.push(fn); },
-    };
+```js
+// shell/src/auth/index.js  (exposed in shell's webpack config)
+let _user = null;
+let _token = null;
+const _listeners = [];
 
-    // Any MFE
-    import { authService } from 'shell/auth';
-    const token = authService.getToken();
+export const authService = {
+  init(user, token) {
+    _user = user; _token = token;
+    _listeners.forEach(fn => fn(user));
+  },
+  getUser()  { return _user; },
+  getToken() { return _token; },
+  onChange(fn) { _listeners.push(fn); },
+};
+```
 
-  Option B — httpOnly Cookie (most secure, recommended for production)
-    Auth token lives in a server-set httpOnly cookie on the parent domain.
-    Browser automatically sends it with every API request to that domain.
-    No JS ever touches the token → immune to XSS.
+```js
+// Any MFE
+import { authService } from 'shell/auth';
+const token = authService.getToken();
+```
 
-    Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Strict; Domain=.acme.com
+### Option B — httpOnly Cookie (most secure, recommended for production)
 
-    MFEs make API calls normally. The token attaches invisibly.
-    This is the cleanest approach — no token passing between MFEs at all.
+```
+Set-Cookie: session=abc123; HttpOnly; Secure; SameSite=Strict; Domain=.acme.com
+```
 
-WHAT MFEs MUST NOT DO:
-  - Redirect to /login themselves → fire an event, let the container handle it
-  - Store the token in localStorage → XSS in any MFE can steal it
-  - Have their own login page → single responsibility, container owns auth
+Auth token lives server-side. Browser sends it automatically with every API request. No JS ever touches it — immune to XSS. MFEs make API calls normally; the cookie attaches invisibly. This is the cleanest approach — no token passing between MFEs at all.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-12. HOW DO YOU PREVENT CSS FROM ONE MFE BREAKING ANOTHER?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### What MFEs must NOT do
 
-Q: Team A uses Tailwind, Team B uses Bootstrap. Won't those conflict?
+- **Redirect to /login themselves** → fire an event, let the container handle it
+- **Store token in localStorage** → XSS in any MFE can steal it
+- **Have their own login page** → container owns auth, single responsibility
 
-A:
-Yes — this is a real problem. Global CSS is the enemy in MFE architecture.
-Here are the strategies from weakest to strongest isolation:
+---
 
-─────────────────────────────────────────────────────────────
-STRATEGY 1: BEM + MFE Namespace prefix (low-tech, requires discipline)
-─────────────────────────────────────────────────────────────
-Every class in every MFE is prefixed with the MFE name.
+## Q12: Team A uses Tailwind, Team B uses Bootstrap — won't those conflict?
 
-  /* products MFE — no class named just "card" */
-  .products-card { padding: 16px; }
-  .products-card__title { font-size: 18px; }
+Yes — global CSS is the enemy in MFE architecture.
 
-  /* cart MFE */
-  .cart-item { border-bottom: 1px solid #eee; }
+### Strategy 1 — BEM + MFE namespace prefix
 
-  Works if teams follow the convention. Breaks if they forget.
+```css
+/* products MFE */
+.products-card { padding: 16px; }
+.products-card__title { font-size: 18px; }
 
-─────────────────────────────────────────────────────────────
-STRATEGY 2: CSS Modules (best for React MFEs)
-─────────────────────────────────────────────────────────────
+/* cart MFE */
+.cart-item { border-bottom: 1px solid #eee; }
+```
+
+Works if teams follow the convention. Breaks if they forget.
+
+### Strategy 2 — CSS Modules (recommended for React MFEs)
+
 The build tool transforms class names into unique hashes at compile time.
 
-  /* ProductCard.module.css */
-  .card  { padding: 16px; }
-  .title { font-size: 18px; }
+```css
+/* ProductCard.module.css */
+.card  { padding: 16px; }
+.title { font-size: 18px; }
+```
 
-  // In component
-  import styles from './ProductCard.module.css';
-  <div className={styles.card}>    // → class="card_a3f9k2"
+```js
+import styles from './ProductCard.module.css';
 
-  No runtime overhead. Cannot conflict with any other MFE's classes.
-  This is the recommended approach for most teams.
+function ProductCard() {
+  return <div className={styles.card}>...</div>; // → class="card_a3f9k2"
+}
+```
 
-─────────────────────────────────────────────────────────────
-STRATEGY 3: CSS-in-JS (Styled Components / Emotion)
-─────────────────────────────────────────────────────────────
-Generates unique class names at runtime. Zero global namespace.
+Cannot conflict with any other MFE's classes. No runtime overhead.
 
-  const Card = styled.div`
-    padding: 16px;
-    background: white;
-  `;  // → class="sc-xyz123 iBcYst"
+### Strategy 3 — CSS-in-JS (Styled Components / Emotion)
 
-  Must ensure styled-components is a singleton (Module Federation shared).
-  Two instances = styles injected twice or incorrectly.
+```js
+const Card = styled.div`
+  padding: 16px;
+  background: white;
+`; // → class="sc-xyz123 iBcYst"
+```
 
-─────────────────────────────────────────────────────────────
-STRATEGY 4: Shadow DOM (strongest isolation — for Web Components)
-─────────────────────────────────────────────────────────────
-Styles inside a shadow root are completely isolated from the page.
-External styles can't get in. Internal styles can't get out.
+> `styled-components` must be a singleton in Module Federation. Two instances = styles injected twice or incorrectly.
 
-  class ProductsMFE extends HTMLElement {
-    connectedCallback() {
-      const shadow = this.attachShadow({ mode: 'open' });
-      const style = document.createElement('style');
-      style.textContent = `.btn { color: red; }`;  // won't leak outside
-      shadow.appendChild(style);
-    }
+### Strategy 4 — Shadow DOM (strongest isolation — Web Components)
+
+```js
+connectedCallback() {
+  const shadow = this.attachShadow({ mode: 'open' });
+  const style = document.createElement('style');
+  style.textContent = `.btn { color: red; }`;  // won't leak outside shadow root
+  shadow.appendChild(style);
+}
+```
+
+### Shared design tokens (work across all isolation strategies)
+
+Use CSS custom properties in a shared `@company/design-tokens` package:
+
+```css
+/* @company/design-tokens/index.css */
+:root {
+  --color-primary: #007bff;
+  --spacing-md: 16px;
+  --font-size-body: 14px;
+}
+```
+
+Custom properties pierce Shadow DOM via inheritance. Updating the tokens package updates all MFEs simultaneously.
+
+---
+
+## Q13: Walk me through what happens when a team deploys their MFE. Does the container redeploy?
+
+**No — that's the whole point.**
+
+### Setup
+
+Each MFE builds to static assets and uploads to a CDN:
+```
+https://cdn.acme.com/products/latest/remoteEntry.js    ← always current
+https://cdn.acme.com/products/latest/main.abc123.js    ← content-hashed chunk
+```
+
+Container config points to the CDN URL — not a version number:
+
+```js
+remotes: {
+  products: 'products@https://cdn.acme.com/products/latest/remoteEntry.js',
+}
+```
+
+### What happens when Team A deploys a fix
+
+1. Team A merges PR → CI pipeline triggers
+2. Webpack builds new chunks → new content-hash filenames
+3. New `remoteEntry.js` updated with new chunk hashes
+4. Files uploaded to CDN (overwriting `/latest/remoteEntry.js`)
+5. **Done. Container is not touched. Container is not redeployed.**
+
+When users next visit: browser fetches fresh `remoteEntry.js` (no-cache), gets new chunk hashes, downloads only changed chunks — rest hits CDN cache.
+
+### Versioned URL strategy (safer for production)
+
+Instead of `/latest`, use versioned paths + a config service:
+
+```js
+// GET /api/mfe-versions → { "products": "v2.4.0", "cart": "v1.9.1" }
+
+async function getRemoteUrls() {
+  const versions = await fetch('/api/mfe-versions').then(r => r.json());
+  return {
+    products: `products@https://cdn.acme.com/products/${versions.products}/remoteEntry.js`,
+    cart:     `cart@https://cdn.acme.com/cart/${versions.cart}/remoteEntry.js`,
+  };
+}
+```
+
+- **Rollback:** update config API response → instant, no redeploy needed
+- **Canary:** 5% of users get `v2.5.0`, 95% get `v2.4.0` via config API logic
+
+---
+
+## Q14: What happens to the user if the cart MFE's CDN goes down?
+
+**Bad implementation:** entire page crashes.
+**Good implementation:** only the cart section shows an error. Everything else keeps working.
+
+The tool: **React Error Boundary + Suspense**
+
+```js
+class MFEErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
-HANDLING SHARED DESIGN TOKENS:
-  Regardless of isolation strategy, MFEs need to share brand colors,
-  spacing, typography. Use CSS custom properties (variables):
-
-  /* published in @company/design-tokens */
-  :root {
-    --color-primary: #007bff;
-    --spacing-md: 16px;
-    --font-size-body: 14px;
+  componentDidCatch(error, info) {
+    errorMonitoring.capture(error, { mfe: this.props.name, ...info });
   }
 
-  These pierce Shadow DOM via inheritance and are available to all MFEs.
-  Updating the design token package updates all MFEs simultaneously.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-13. HOW DOES INDEPENDENT DEPLOYMENT ACTUALLY WORK?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Q: Walk me through what happens when Team A deploys their MFE. Does the container need to
-   redeploy too?
-
-A:
-No — that's the whole point. Here's the end-to-end flow:
-
-SETUP:
-  Each MFE builds to static assets (JS + CSS chunks) and uploads to a CDN.
-
-  https://cdn.acme.com/products/latest/remoteEntry.js    ← always current
-  https://cdn.acme.com/products/latest/main.abc123.js    ← content-hashed chunk
-
-  Container config points to the CDN URL, not a version:
-    remotes: { products: 'products@https://cdn.acme.com/products/latest/remoteEntry.js' }
-
-TEAM A DEPLOYS A FIX:
-  1. Team A merges PR → CI pipeline triggers
-  2. Webpack builds new chunks → new content-hash filenames
-  3. New remoteEntry.js updated to point to new chunk hashes
-  4. Files uploaded to CDN (overwriting /latest/remoteEntry.js)
-  5. Done. Container is NOT touched. Container is NOT redeployed.
-
-  When users next visit the site:
-  6. Container loads (from CDN cache or server)
-  7. React.lazy triggers → fetches /latest/remoteEntry.js (no-cache)
-  8. Gets new chunk hashes → fetches new chunks
-  9. Users see the updated products MFE
-
-VERSIONED URL STRATEGY (safer for production):
-  Instead of /latest, use versioned paths + a config service:
-
-  https://cdn.acme.com/products/v2.4.0/remoteEntry.js
-
-  A config API tells the container which version to load:
-  GET /api/mfe-versions  →  { "products": "v2.4.0", "cart": "v1.9.1" }
-
-  BENEFITS:
-  - Rollback is instant: just update the config API response
-  - Canary deployments: 5% of users get v2.5.0, rest get v2.4.0
-  - No user sees a broken deploy if you gate through the config service
-
-CACHING RULES (critical for correctness):
-  remoteEntry.js          →  Cache-Control: no-cache  (always fresh)
-  *.chunk.js files        →  Cache-Control: max-age=31536000  (1 year, content-hashed)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-14. HOW DO YOU HANDLE A MFE THAT FAILS TO LOAD?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Q: What happens to the user if the cart MFE's CDN goes down?
-
-A:
-In a poorly built MFE app: the whole page crashes. In a well-built one: only the
-cart section shows an error. Everything else keeps working.
-
-The tool that makes this possible is React Error Boundary + Suspense.
-
-  // A reusable wrapper for any MFE
-  class MFEErrorBoundary extends React.Component {
-    state = { hasError: false, error: null };
-
-    static getDerivedStateFromError(error) {
-      return { hasError: true, error };
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="mfe-error">
+          <p>This section is temporarily unavailable.</p>
+          <button onClick={() => this.setState({ hasError: false })}>
+            Retry
+          </button>
+        </div>
+      );
     }
-
-    componentDidCatch(error, info) {
-      // Log to Sentry, Datadog, etc.
-      errorMonitoring.capture(error, { mfe: this.props.name, ...info });
-    }
-
-    render() {
-      if (this.state.hasError) {
-        return (
-          <div className="mfe-error">
-            <p>This section is temporarily unavailable.</p>
-            <button onClick={() => this.setState({ hasError: false })}>
-              Retry
-            </button>
-          </div>
-        );
-      }
-      return this.props.children;
-    }
+    return this.props.children;
   }
+}
+```
 
-  // Usage in container
-  const CartApp = React.lazy(() => import('cart/App'));
+```js
+// Wrap every MFE mount in the container
+const CartApp = React.lazy(() => import('cart/App'));
 
-  function CartSection() {
-    return (
-      <MFEErrorBoundary name="cart">
-        <Suspense fallback={<CartSkeleton />}>
-          <CartApp />
-        </Suspense>
-      </MFEErrorBoundary>
-    );
-  }
+function CartSection() {
+  return (
+    <MFEErrorBoundary name="cart">
+      <Suspense fallback={<CartSkeleton />}>
+        <CartApp />
+      </Suspense>
+    </MFEErrorBoundary>
+  );
+}
+```
 
-If cart's remoteEntry.js is unreachable:
-  - React.lazy import throws → Suspense catches it while loading
-  - If it errors → Error Boundary catches it
-  - User sees "This section is temporarily unavailable. [Retry]"
-  - Header, Products, Navigation all continue working normally
+If cart's CDN is unreachable → Error Boundary catches it → user sees "Temporarily unavailable. [Retry]" → Header, Products, Navigation all continue working normally.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-15. WHAT ARE THE REAL DOWNSIDES? WHEN WOULD YOU NOT USE MFE?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-Q: MFE sounds great. What's the catch?
+## Q15: MFE sounds great. What's the catch? When would you NOT use it?
 
-A:
-The MFE architecture is often oversold. Here are the honest trade-offs:
+### Genuine costs
 
-GENUINE COSTS:
+**Operational complexity** — Every MFE needs its own CI/CD pipeline, CDN config, monitoring, and alerting. 5 apps = 5× the infrastructure burden.
 
-  Operational complexity
-    Every MFE needs its own CI/CD pipeline, CDN config, monitoring, alerting.
-    What was one deployment artifact is now five. Infrastructure burden is real.
+**UX inconsistency** — Different teams → different button styles, animations, font rendering. The app looks built by four companies — because it was. Requires a shared design system with strong enforcement.
 
-  UX inconsistency
-    Team A uses their own button style. Team B uses another. Over time, the app
-    looks like it was built by four different companies — because it was.
-    Requires a shared design system + enforcement process.
+**Performance overhead** — Multiple network requests before page is interactive. Without careful lazy loading and caching, initial load is slower than a well-optimized monolith.
 
-  Performance overhead
-    Multiple network requests to load MFEs. Without careful lazy loading and
-    caching, initial page load is slower than a well-optimized monolith.
+**Debugging across boundaries** — Stack trace: "Error in products MFE." But the state that caused it came from auth MFE via an event. Needs correlation IDs and unified logging across all MFEs.
 
-  Debugging across boundaries
-    Stack trace says "Error in products MFE." But the state that caused it
-    came from auth MFE via an event. Distributed debugging is hard.
-    Need correlation IDs and unified logging across all MFEs.
+**Version coordination (the hidden coupling)** — Upgrading `react-router` v5 → v6 requires ALL teams to upgrade before anyone can use v6 features in the shared module. You traded release coupling for upgrade coupling.
 
-  Version coordination (the hidden coupling)
-    Upgrading react-router from v5 to v6 now requires ALL teams to upgrade
-    before anyone can use v6 features in the shared module. You've traded
-    release coupling for upgrade coupling.
+**Testing is harder** — Unit tests are fine. Integration tests are hard (need both MFEs running). E2E tests require the entire stack deployed.
 
-  Testing is harder
-    Unit tests: fine (each MFE in isolation).
-    Integration tests: hard (testing two MFEs together requires both to run).
-    E2E tests: require the whole stack to be deployed.
+### When NOT to use MFE
 
-WHEN NOT TO USE MFE:
-  - Team < 8 frontend engineers — coordination overhead eats your velocity
-  - Already deploying everything together — no actual independence gain
-  - MVP or early product — wrong time to take on infra complexity
-  - High UX consistency requirements — design tools, creative apps, IDEs
-  - No clear domain boundaries — forced split = artificial boundaries = more pain
+- Team < 8 frontend engineers — coordination overhead eats velocity
+- Already deploying everything together — no independence gained
+- MVP or early product — wrong time for infra complexity
+- High UX consistency requirements — design tools, IDEs, creative apps
+- No clear domain boundaries — forced split creates artificial pain
 
-THE TEST: "Would independent deployment actually save us time this quarter?"
-  If yes → MFE is worth exploring.
-  If no  → optimize your monolith (better code splitting, feature flags, modular architecture).
+> **The litmus test:** "Would independent deployment actually save us time this quarter?"
+> Yes → MFE is worth exploring.
+> No → optimize your monolith (code splitting, feature flags, modular architecture).
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-16. HOW WOULD YOU MIGRATE AN EXISTING MONOLITH TO MFEs?
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-Q: We have a 4-year-old React monolith. How do we migrate to MFE without a big-bang rewrite?
+## Q16: We have a 4-year-old React monolith. How do we migrate to MFE without a big-bang rewrite?
 
-A:
-Use the Strangler Fig pattern. You never rewrite — you grow the new system around
-the old one until the old one has nothing left.
+Use the **Strangler Fig pattern.** You never rewrite — you grow the new system around the old one until the old one has nothing left.
 
-─────────────────────────────────────────────────────────────
-PHASE 1: ADD A SHELL IN FRONT OF THE MONOLITH
-─────────────────────────────────────────────────────────────
-Create a minimal shell/container app. For now, it just proxies everything to the
-monolith. Users don't notice any change.
+### Phase 1 — Add a shell in front of the monolith
 
-  // shell routes ALL traffic to monolith MFE
-  remotes: { legacy: 'legacy@https://your-old-app.com/remoteEntry.js' }
+Create a minimal container app. For now it just proxies everything to the monolith. Users notice zero change.
 
-  // OR simply render the monolith in an iframe temporarily
-  // (crude but buys you the shell structure without any monolith changes)
+```js
+// shell routes ALL traffic to the old monolith initially
+remotes: {
+  legacy: 'legacy@https://your-old-app.com/remoteEntry.js'
+}
+```
 
-─────────────────────────────────────────────────────────────
-PHASE 2: EXTRACT THE LOWEST-RISK FEATURE FIRST
-─────────────────────────────────────────────────────────────
-Pick a feature that is:
-  - Self-contained (few external dependencies)
-  - Has a clear URL boundary (/account, /help, /promotions)
-  - Owned by one team
+### Phase 2 — Extract the lowest-risk feature first
 
-Build it as a new MFE. Shell routes /account to new MFE, everything else to monolith.
+Pick a feature that is self-contained, has a clear URL boundary (`/account`, `/help`), and is owned by one team. Shell routes `/account` → new Account MFE. Everything else → monolith unchanged.
 
-─────────────────────────────────────────────────────────────
-PHASE 3: REPEAT, FEATURE BY FEATURE
-─────────────────────────────────────────────────────────────
-  Month 1: /account → Account MFE
-  Month 2: /cart    → Cart MFE
-  Month 3: /search  → Search MFE
-  Month 6: /products → Products MFE
+### Phase 3 — Repeat, feature by feature
 
-The monolith shrinks with each extraction. Users never see a disruption.
+```
+Month 1: /account   → Account MFE
+Month 2: /cart      → Cart MFE
+Month 3: /search    → Search MFE
+Month 6: /products  → Products MFE
+```
 
-─────────────────────────────────────────────────────────────
-PHASE 4: DECOMMISSION THE MONOLITH
-─────────────────────────────────────────────────────────────
-When the monolith serves no routes, shut it down. Migration complete.
+Monolith shrinks with each extraction. Users never see a disruption.
 
-WHAT TO DO ABOUT SHARED CODE IN THE MONOLITH:
-  Identify code used across multiple features (utilities, hooks, services).
-  Extract it into a shared package before you extract the MFEs.
-  Publish to your private npm registry as @company/shared-utils.
-  Both the monolith and new MFEs can import from it during transition.
+### Phase 4 — Decommission the monolith
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-17. QUICK-FIRE SCENARIO QUESTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When it serves no routes, shut it down. Migration complete.
 
-Q: What is remoteEntry.js?
-A: The manifest file a remote MFE exposes — tells the host what modules are available
-   and what chunks to fetch. Should never be cached; chunks are cached aggressively.
+### Handling shared code in the monolith
 
-Q: Why singleton: true for React?
-A: React must exist as one instance in memory. Two instances = hooks don't work
-   across MFE boundaries, context is invisible between them.
+Identify code used across multiple features (utils, hooks, services). Extract it into `@company/shared-utils` **before** extracting the MFEs. Both the monolith and new MFEs import from it during the transition.
 
-Q: Container uses BrowserRouter. What should each MFE use?
-A: MemoryRouter. Avoids two history objects fighting over the URL.
+---
 
-Q: Two sibling MFEs need to communicate. How?
-A: Custom DOM events via window.dispatchEvent / window.addEventListener.
-   Namespace events by MFE name to avoid collisions.
+## Q17: Quick-fire Scenario Questions
 
-Q: Your design system releases v3.0 with breaking changes. How do you coordinate?
-A: Publish v3.0 to npm. Communicate the migration guide to all teams.
-   Teams upgrade on their own timeline. During transition, some MFEs are on v2,
-   some on v3. This is fine as long as Module Federation doesn't force a singleton.
-   For singletons (styled-components), coordinate a synchronized upgrade window.
+**Q: What is remoteEntry.js?**
+The manifest file a remote MFE exposes — tells the host what modules are available and what chunks to fetch. Must **not** be cached; chunks should be cached aggressively.
 
-Q: How do you test a MFE?
-A: Three layers:
-   1. Unit tests inside the MFE repo (Jest + RTL) — fast, in isolation
-   2. Integration tests with a mocked shell (test MFE mounts correctly, events fire)
-   3. E2E tests in staging with the real container + real MFEs (Cypress / Playwright)
-   Add contract tests (Pact) to verify the interface between container and MFE
-   without running both simultaneously.
+---
 
-Q: Team A wants to use Vue, everyone else uses React. Is that OK?
-A: Technically yes — that's the whole promise of MFEs. But you lose React Context
-   and shared React libs between Team A and others. You also maintain two dev cultures.
-   The organizational cost usually outweighs the technical freedom. Strongly encourage
-   alignment on one framework unless there's a compelling reason (legacy system, specialty tool).
+**Q: Why `singleton: true` for React?**
+React must exist as one instance in memory. Two instances = hooks don't work across MFE boundaries; React Context is invisible between them.
 
-Q: Performance got worse after migrating to MFE. Why?
-A: Common reasons:
-   - MFEs loading eagerly instead of lazily (fix: React.lazy + route-based splitting)
-   - React or other libs not in shared config (fix: deduplicate via Module Federation)
-   - remoteEntry.js files not preloaded (fix: <link rel="preload">)
-   - Too many sequential network requests (fix: HTTP/2, CDN, preloading)
+---
 
-Q: What's the difference between Module Federation and Web Components for MFE?
-A: Module Federation: React-centric, shares JS modules and React components,
-   no CSS isolation out of the box, tightest integration.
-   Web Components: framework-agnostic, browser-native, true CSS isolation via Shadow DOM,
-   but has friction with React events and SSR. Choose Web Components when teams use
-   different frameworks or you need a truly tech-agnostic boundary.
+**Q: Container uses BrowserRouter. What should each MFE use?**
+`MemoryRouter` — avoids two history objects fighting over the URL.
+
+---
+
+**Q: Two sibling MFEs need to communicate. How?**
+Custom DOM events — `window.dispatchEvent` / `window.addEventListener`. Namespace events by MFE name to avoid collisions.
+
+---
+
+**Q: Your design system releases v3.0 with breaking changes. How do you coordinate?**
+Publish v3.0 to npm with a migration guide. Teams upgrade on their own timeline. If it's a Module Federation singleton (e.g. `styled-components`), coordinate a synchronized upgrade window across all MFEs.
+
+---
+
+**Q: How do you test a MFE?**
+Three layers:
+1. **Unit tests** inside the MFE repo (Jest + RTL) — fast, isolated
+2. **Integration tests** with a mocked shell — MFE mounts correctly, events fire correctly
+3. **E2E tests** in staging with real container + real MFEs (Cypress / Playwright)
+
+Add **contract tests** (Pact) to verify the container ↔ MFE interface without running both simultaneously.
+
+---
+
+**Q: Performance got worse after migrating to MFE. Why?**
+Common causes:
+- MFEs loading eagerly instead of lazily → fix: `React.lazy` + route-based splitting
+- React not in `shared` config → fix: deduplicate via Module Federation singleton
+- `remoteEntry.js` not preloaded → fix: `<link rel="preload">`
+- Too many sequential requests → fix: HTTP/2, CDN, preload critical MFEs
+
+---
+
+**Q: Module Federation vs Web Components — which to choose?**
+**Module Federation** — React-centric, shares React components and state primitives, tightest integration, no CSS isolation out of the box.
+**Web Components** — framework-agnostic, browser-native, true CSS isolation via Shadow DOM, but has friction with React events and SSR.
+
+Choose Web Components when teams use different frameworks or you need a tech-agnostic hard boundary. Otherwise Module Federation is the better choice.
