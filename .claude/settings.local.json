@@ -48,7 +48,8 @@
       "WebFetch(domain:www.frontendgeek.com)",
       "WebFetch(domain:khaniqbal.medium.com)",
       "WebFetch(domain:www.educative.io)",
-      "WebFetch(domain:jpmorganchase.github.io)"
+      "WebFetch(domain:jpmorganchase.github.io)",
+      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/128-longest-consecutive-sequence.js)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
