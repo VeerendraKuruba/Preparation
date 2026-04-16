@@ -50,12 +50,15 @@
       "WebFetch(domain:www.educative.io)",
       "WebFetch(domain:jpmorganchase.github.io)",
       "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/128-longest-consecutive-sequence.js)",
-      "WebFetch(domain:saharanitaa.hashnode.dev)"
+      "WebFetch(domain:saharanitaa.hashnode.dev)",
+      "Read(//Users/kveerendra/Documents/**)",
+      "Read(//Users/kveerendra/**)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
       "/Users/kveerendra/Documents/Work/Preparation/milky-way-messenger/src",
-      "/Users/kveerendra/Documents/Work/Preparation/interviews"
+      "/Users/kveerendra/Documents/Work/Preparation/interviews",
+      "/Users/kveerendra/Documents/Work/Preparation/src/hackermart/components"
     ]
   }
 }

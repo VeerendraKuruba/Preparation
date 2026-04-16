@@ -18,6 +18,7 @@ JavaScript solutions kept as individual files (`{id}-{slug}.js`) for quick looku
 | 28 | Find The Index Of The First Occurrence In A String | [28-find-the-index-of-the-first-occurrence-in-a-string.js](./28-find-the-index-of-the-first-occurrence-in-a-string.js) |
 | 30 | Substring With Concatenation Of All Words | [30-substring-with-concatenation-of-all-words.js](./30-substring-with-concatenation-of-all-words.js) |
 | 35 | Search Insert Position | [35-search-insert-position.js](./35-search-insert-position.js) |
+| 40 | Combination Sum Ii | [40-combination-sum-ii.js](./40-combination-sum-ii.js) |
 | 53 | Maximum Subarray | [53-maximum-subarray.js](./53-maximum-subarray.js) |
 | 55 | Jump Game | [55-jump-game.js](./55-jump-game.js) |
 | 56 | Merge Intervals | [56-merge-intervals.js](./56-merge-intervals.js) |

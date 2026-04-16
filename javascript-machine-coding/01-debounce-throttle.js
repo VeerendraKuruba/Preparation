@@ -57,8 +57,19 @@ export function throttle(fn, waitMs, options = {}) {
         timer = undefined;
       }
       last = now;
-      if (leading) fn(...args);
-      lastArgs = undefined;
+      if (leading) {
+        fn(...args);
+        lastArgs = undefined;
+      } else if (trailing) {
+        timer = setTimeout(() => {
+          timer = undefined;
+          last = Date.now();
+          if (lastArgs) fn(...lastArgs);
+          lastArgs = undefined;
+        }, waitMs);
+      } else {
+        lastArgs = undefined;
+      }
       return;
     }
 

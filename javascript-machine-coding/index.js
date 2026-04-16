@@ -6,3 +6,8 @@ export { retryFetch, withRetry } from './05-retry-api.js';
 export { PubSub } from './06-pub-sub.js';
 export { AsyncRateLimiter, SlidingWindowLimiter } from './07-rate-limiter.js';
 export { ConcurrencyPool, scheduleWithConcurrency } from './08-task-scheduler-concurrency.js';
+export {
+  sumScaledEvens,
+  sumScaledEvensRecursive,
+  sumScaledEvensFilterReduce,
+} from './09-even-array-scaled-sum.js';
