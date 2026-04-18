@@ -52,7 +52,21 @@
       "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/128-longest-consecutive-sequence.js)",
       "WebFetch(domain:saharanitaa.hashnode.dev)",
       "Read(//Users/kveerendra/Documents/**)",
-      "Read(//Users/kveerendra/**)"
+      "Read(//Users/kveerendra/**)",
+      "Bash(open /Users/kveerendra/Documents/Work/Preparation/css-grid-demo.html)",
+      "Bash(open /Users/kveerendra/Documents/Work/Preparation/css-stacking-context.html)",
+      "Bash(open /Users/kveerendra/Documents/Work/Preparation/react-bar-chart/index.html)",
+      "Bash(npm -v)",
+      "Bash(npm create *)",
+      "Bash(open /Users/kveerendra/Documents/Work/Preparation/react-bar-chart/survey.html)",
+      "Bash(open /Users/kveerendra/Documents/Work/Preparation/react-bar-chart/concentric.html)",
+      "Bash(yarn --version)",
+      "Bash(yarn create *)",
+      "Bash(C-c)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(open http://localhost:5174)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",

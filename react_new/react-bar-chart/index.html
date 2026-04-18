@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>React Bar Chart</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="BarChart.css" />
+</head>
+<body style="background:#f0f2f5; margin:0;">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ─── BarChart.jsx ─────────────────────────────────────
+    function BarChart({ data, keys, colors, title }) {
+      const [tooltip, setTooltip] = useState(null);
+
+      const yMax = Math.max(...data.flatMap((item) => keys.map((k) => item[k])));
+
+      return (
+        <div className="chart-wrapper">
+
+          <p className="chart-title">{title}</p>
+
+          <div className="bars">
+            {data.map((item) => (
+              <div key={item.month} className="bar-group">
+                <div className="bar-row">
+                  {keys.map((key) => (
+                    <div
+                      key={key}
+                      className="bar"
+                      style={{
+                        height: `${(item[key] / yMax) * 100}%`,
+                        background: colors[key],
+                      }}
+                      onMouseEnter={(e) =>
+                        setTooltip({
+                          label: `${item.month} · ${key}: $${item[key].toLocaleString()}`,
+                          x: e.currentTarget.getBoundingClientRect().left,
+                          y: e.currentTarget.getBoundingClientRect().top,
+                        })
+                      }
+                      onMouseLeave={() => setTooltip(null)}
+                    />
+                  ))}
+                </div>
+                <span className="bar-label">{item.month}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="legend">
+            {keys.map((key) => (
+              <div key={key} className="legend-item">
+                <div className="legend-dot" style={{ background: colors[key] }} />
+                <span>{key}</span>
+              </div>
+            ))}
+          </div>
+
+          {tooltip && (
+            <div className="tooltip" style={{ top: tooltip.y - 48, left: tooltip.x }}>
+              {tooltip.label}
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // ─── App.jsx ──────────────────────────────────────────
+    const data = [
+      { month: 'Jan', revenue: 4200, expenses: 2800 },
+      { month: 'Feb', revenue: 5800, expenses: 3200 },
+      { month: 'Mar', revenue: 4900, expenses: 3600 },
+      { month: 'Apr', revenue: 7200, expenses: 4100 },
+      { month: 'May', revenue: 6100, expenses: 3800 },
+      { month: 'Jun', revenue: 8400, expenses: 4600 },
+    ];
+
+    const colors = { revenue: '#4f46e5', expenses: '#e11d48' };
+
+    function App() {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 1rem', minHeight: '100vh' }}>
+          <BarChart
+            data={data}
+            keys={['revenue', 'expenses']}
+            colors={colors}
+            title="Monthly Revenue vs Expenses"
+          />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

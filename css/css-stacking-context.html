@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stacking Context Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; padding: 2rem; background: #f0f2f5; }
+
+    h2 { margin: 2rem 0 1rem; font-size: 1rem; color: #333; }
+    .label { font-size: 0.75rem; font-weight: bold; color: white; padding: 0.25rem 0.5rem; }
+
+    /* ─── DEMO 1: No stacking context — z-index works globally ─── */
+    .demo1 {
+      position: relative;
+      height: 120px;
+      margin-bottom: 3rem;
+    }
+
+    .d1-box-a {
+      position: absolute;
+      width: 200px; height: 80px;
+      background: #4f46e5;
+      top: 0; left: 0;
+      z-index: 1;
+    }
+
+    .d1-box-b {
+      position: absolute;
+      width: 200px; height: 80px;
+      background: #e11d48;
+      top: 20px; left: 80px;
+      z-index: 2; /* higher z-index → paints on top ✅ */
+    }
+
+    /* ─── DEMO 2: Stacking context blocks z-index from escaping ─── */
+    .demo2 {
+      position: relative;
+      height: 160px;
+      margin-bottom: 3rem;
+    }
+
+    /* This parent creates a stacking context (opacity < 1) */
+    .d2-parent-low {
+      position: absolute;
+      width: 220px; height: 100px;
+      background: #4f46e5;
+      top: 0; left: 0;
+      z-index: 1;          /* parent z-index is LOW */
+      opacity: 0.99;       /* ← THIS creates a new stacking context */
+    }
+
+    .d2-child-high {
+      position: absolute;
+      width: 160px; height: 60px;
+      background: #7c3aed;
+      top: 20px; left: 20px;
+      z-index: 9999;       /* very high — but TRAPPED inside parent's context */
+    }
+
+    /* This element has no stacking context, lower z-index but wins over the child above */
+    .d2-box-wins {
+      position: absolute;
+      width: 220px; height: 100px;
+      background: #e11d48;
+      top: 30px; left: 100px;
+      z-index: 2;          /* only z-index: 2, yet paints over z-index: 9999 child */
+    }
+
+    /* ─── DEMO 3: What triggers a stacking context ─── */
+    .triggers {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .trigger-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      border-left: 4px solid #4f46e5;
+      font-size: 0.85rem;
+    }
+
+    .trigger-card code {
+      display: block;
+      margin-top: 0.5rem;
+      background: #f3f4f6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #be185d;
+    }
+
+    .trigger-card p {
+      color: #555;
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    /* annotation styles */
+    .note {
+      font-size: 0.75rem;
+      background: #fefce8;
+      border: 1px solid #fde047;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      color: #713f12;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- DEMO 1 -->
+  <h2>Demo 1 — Normal z-index (no stacking context)</h2>
+  <p class="note">Red box has z-index:2, Blue has z-index:1 → Red wins as expected ✅</p>
+  <div class="demo1">
+    <div class="d1-box-a"><span class="label">Blue z-index: 1</span></div>
+    <div class="d1-box-b"><span class="label">Red z-index: 2 → on top ✅</span></div>
+  </div>
+
+  <!-- DEMO 2 -->
+  <h2>Demo 2 — Stacking context traps child z-index</h2>
+  <p class="note">
+    Purple child has z-index:9999 but its parent has opacity:0.99 (creates a stacking context) with z-index:1.
+    Red box has z-index:2 and beats the entire blue group — even the z-index:9999 child. 😲
+  </p>
+  <div class="demo2">
+    <div class="d2-parent-low">
+      <span class="label">Blue parent z-index: 1 (opacity:0.99 → new stacking context)</span>
+      <div class="d2-child-high">
+        <span class="label">Purple child z-index: 9999 — TRAPPED 🔒</span>
+      </div>
+    </div>
+    <div class="d2-box-wins">
+      <span class="label">Red z-index: 2 — WINS over 9999 child 😲</span>
+    </div>
+  </div>
+
+  <!-- DEMO 3 -->
+  <h2>Demo 3 — What creates a stacking context?</h2>
+  <div class="triggers">
+    <div class="trigger-card">
+      Root element
+      <code>&lt;html&gt;</code>
+      <p>The page itself is always a stacking context.</p>
+    </div>
+    <div class="trigger-card">
+      position + z-index
+      <code>position: relative;<br>z-index: 1;</code>
+      <p>Any non-auto z-index on a positioned element.</p>
+    </div>
+    <div class="trigger-card">
+      opacity
+      <code>opacity: 0.99;</code>
+      <p>Any value less than 1 triggers a new context.</p>
+    </div>
+    <div class="trigger-card">
+      transform
+      <code>transform: translateX(0);</code>
+      <p>Even a no-op transform creates a context.</p>
+    </div>
+    <div class="trigger-card">
+      filter
+      <code>filter: blur(0);</code>
+      <p>Same as transform — context is created.</p>
+    </div>
+    <div class="trigger-card">
+      will-change
+      <code>will-change: transform;</code>
+      <p>Hints to browser → creates context early.</p>
+    </div>
+    <div class="trigger-card">
+      isolation
+      <code>isolation: isolate;</code>
+      <p>Explicitly creates a context. Most predictable.</p>
+    </div>
+    <div class="trigger-card">
+      mix-blend-mode
+      <code>mix-blend-mode: multiply;</code>
+      <p>Blending requires its own context.</p>
+    </div>
+  </div>
+
+</body>
+</html>
