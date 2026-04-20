@@ -67,13 +67,17 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(curl -s http://localhost:5174)",
       "Bash(open http://localhost:5174)",
-      "WebFetch(domain:www.desiqna.in)"
+      "WebFetch(domain:www.desiqna.in)",
+      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/106-construct-binary-tree-from-inorder-and-postorder-traversal.js)",
+      "Bash(git mv *)",
+      "Bash(git add *)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
       "/Users/kveerendra/Documents/Work/Preparation/milky-way-messenger/src",
       "/Users/kveerendra/Documents/Work/Preparation/interviews",
-      "/Users/kveerendra/Documents/Work/Preparation/src/hackermart/components"
+      "/Users/kveerendra/Documents/Work/Preparation/src/hackermart/components",
+      "/Users/kveerendra/Documents/Work/Preparation/leetcode"
     ]
   }
 }

@@ -19,6 +19,7 @@ var combinationSum2 = function (candidates, target) {
       result.push([...current]);
       return;
     }
+    //[1, 1, 2, 5, 6, 7, 10]
 
     for (let i = startIndex; i < candidates.length; i++) {
       const num = candidates[i];
