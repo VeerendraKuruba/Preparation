@@ -70,7 +70,8 @@
       "WebFetch(domain:www.desiqna.in)",
       "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/106-construct-binary-tree-from-inorder-and-postorder-traversal.js)",
       "Bash(git mv *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/binary-trees/bfs-traversal.js)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
