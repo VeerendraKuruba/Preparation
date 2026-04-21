@@ -290,137 +290,473 @@ async function initAuth() {
 
 ## 4. Authorization Patterns (Client-Side)
 
-### 4.1 Role-Based Access Control (RBAC)
+> **Note on `useAuth`:** Every example in this section uses `useAuth()`. That hook is defined in Section 5 (Auth State Management). Read Section 5 first if you need to understand where `user`, `status`, and `login`/`logout` come from.
 
-Users are assigned roles. Roles carry permissions.
+---
 
-```
-User → has → Role → has → Permissions
-admin → ["doc:read", "doc:write", "doc:delete", "user:manage"]
-signer → ["doc:read", "doc:sign"]
-viewer → ["doc:read"]
-```
+### 4.1 Role-Based Access Control (RBAC) — Full Implementation
+
+RBAC assigns users a **role**, and each role maps to a set of allowed actions. The client enforces this in two places:
+1. **Route level** — block entire pages
+2. **Component level** — show/hide UI elements
+
+#### Step 1 — Define your roles and what they can access
 
 ```js
-// JWT payload
-{ sub: "user:123", role: "admin" }
+// src/auth/roles.js
 
-// React guard component
-function ProtectedRoute({ allowedRoles, children }) {
-  const { user, loading } = useAuth();
+// Numeric weight enables hierarchy: higher = more access
+export const ROLE_HIERARCHY = {
+  admin:   100,
+  manager:  60,
+  signer:   40,
+  viewer:   20,
+};
+
+// Each role's allowed routes (used in route config)
+export const ROLE_PERMISSIONS = {
+  admin:   ["dashboard", "documents", "admin", "settings", "reports"],
+  manager: ["dashboard", "documents", "settings", "reports"],
+  signer:  ["dashboard", "documents"],
+  viewer:  ["dashboard", "documents"],
+};
+
+// Check if userRole meets or exceeds requiredRole
+export function hasMinRole(userRole, requiredRole) {
+  return (ROLE_HIERARCHY[userRole] ?? 0) >= (ROLE_HIERARCHY[requiredRole] ?? 0);
+}
+```
+
+#### Step 2 — Create `AuthContext` (defines `useAuth`)
+
+```jsx
+// src/auth/AuthContext.jsx
+import { createContext, useContext, useState, useEffect } from "react";
+
+// 1. Create the context
+const AuthContext = createContext(null);
+
+// 2. Provider wraps the whole app
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  // status: "loading" | "authenticated" | "unauthenticated"
+  const [status, setStatus] = useState("loading");
+
+  // On app mount — try to restore session silently via refresh cookie
+  useEffect(() => {
+    fetch("/api/auth/refresh", { method: "POST", credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("No session");
+        return res.json();
+      })
+      .then(({ user }) => {
+        setUser(user);          // user = { id, name, email, role }
+        setStatus("authenticated");
+      })
+      .catch(() => {
+        setStatus("unauthenticated");
+      });
+  }, []);
+
+  async function login(email, password) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const { message } = await res.json();
+      throw new Error(message); // let the form handle the error message
+    }
+    const { user } = await res.json();
+    setUser(user);
+    setStatus("authenticated");
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    setUser(null);
+    setStatus("unauthenticated");
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, status, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// 3. Hook — all components call this to get auth state
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  return ctx;
+}
+```
+
+```jsx
+// src/main.jsx — wrap your entire app
+import { AuthProvider } from "./auth/AuthContext";
+
+root.render(
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+);
+```
+
+#### Step 3 — Route Guard component
+
+```jsx
+// src/auth/ProtectedRoute.jsx
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "./AuthContext";
+import { hasMinRole } from "./roles";
+
+/**
+ * Props:
+ *   requiredRole  — minimum role needed (optional, just checks logged in if omitted)
+ *   allowedRoles  — explicit list of allowed roles (alternative to requiredRole)
+ *   redirectTo    — where to send unauthorized users (default: /403)
+ */
+export function ProtectedRoute({
+  children,
+  requiredRole,
+  allowedRoles,
+  redirectTo = "/403",
+}) {
+  const { user, status } = useAuth();
   const location = useLocation();
 
-  if (loading) return <PageSpinner />;
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
-  if (!allowedRoles.includes(user.role)) return <Navigate to="/403" replace />;
+  // Still checking session — render nothing (or a spinner)
+  if (status === "loading") {
+    return <div className="full-page-spinner">Loading...</div>;
+  }
+
+  // Not logged in — send to login, remember where they wanted to go
+  if (status === "unauthenticated" || !user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Role check — using hierarchy
+  if (requiredRole && !hasMinRole(user.role, requiredRole)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // Role check — using explicit list
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  return children;
+}
+```
+
+#### Step 4 — Wire up routes
+
+```jsx
+// src/App.jsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/403" element={<ForbiddenPage />} />
+
+      {/* Any logged-in user */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Minimum role = "manager" (also lets admin in via hierarchy) */}
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute requiredRole="manager">
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Only admins */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Redirect root to dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}
+```
+
+#### Step 5 — Redirect back after login
+
+```jsx
+// src/pages/LoginPage.jsx
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
+
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Go back to where they were trying to go, or default to /dashboard
+  const from = location.state?.from?.pathname ?? "/dashboard";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      await login(email, password);
+      navigate(from, { replace: true }); // replace so back button doesn't return to login
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      {error && <p className="error">{error}</p>}
+      <button type="submit">Login</button>
+    </form>
+  );
+}
+```
+
+#### Step 6 — Component-level RBAC (show/hide UI)
+
+```jsx
+// src/auth/RoleGuard.jsx
+import { useAuth } from "./AuthContext";
+import { hasMinRole } from "./roles";
+
+// Declarative — wrap UI elements
+export function RoleGuard({ requiredRole, allowedRoles, fallback = null, children }) {
+  const { user } = useAuth();
+
+  if (!user) return fallback;
+  if (requiredRole && !hasMinRole(user.role, requiredRole)) return fallback;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return fallback;
+
   return children;
 }
 
-// Nested route protection
-<Routes>
-  <Route path="/dashboard" element={
-    <ProtectedRoute allowedRoles={["admin", "signer", "viewer"]}>
-      <Dashboard />
-    </ProtectedRoute>
-  } />
-  <Route path="/admin" element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminPanel />
-    </ProtectedRoute>
-  } />
-</Routes>
+// Imperative hook — for logic inside handlers
+export function useRole() {
+  const { user } = useAuth();
+  return {
+    role: user?.role,
+    isAdmin:   user ? hasMinRole(user.role, "admin") : false,
+    isManager: user ? hasMinRole(user.role, "manager") : false,
+    isSigner:  user ? hasMinRole(user.role, "signer") : false,
+    hasRole:   (r) => user ? hasMinRole(user.role, r) : false,
+  };
+}
 ```
 
-**RBAC pitfall:** roles become bloated over time as exceptions accumulate ("admin but can't delete", "viewer but can export"). At that point, switch to permission-based.
+```jsx
+// Usage in a component
+function DocumentActions({ doc }) {
+  const { user } = useAuth();
+  const { isAdmin, hasRole } = useRole();
+
+  return (
+    <div>
+      {/* Visible to everyone who can view the document */}
+      <DownloadButton doc={doc} />
+
+      {/* Only signers and above */}
+      <RoleGuard requiredRole="signer">
+        <SignButton doc={doc} />
+      </RoleGuard>
+
+      {/* Only admins */}
+      <RoleGuard requiredRole="admin">
+        <DeleteButton doc={doc} />
+      </RoleGuard>
+
+      {/* Explicit list — admin or manager only */}
+      <RoleGuard allowedRoles={["admin", "manager"]}>
+        <AuditLogButton doc={doc} />
+      </RoleGuard>
+
+      {/* Imperative — disable a button instead of hiding it */}
+      <button
+        onClick={handleExport}
+        disabled={!hasRole("manager")}
+        title={!hasRole("manager") ? "Requires manager role" : ""}
+      >
+        Export
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+### What the JWT payload looks like (server side)
+
+```js
+// Server encodes role in the JWT when user logs in
+const token = jwt.sign(
+  {
+    sub: user.id,           // "user:123"
+    role: user.role,        // "admin" | "manager" | "signer" | "viewer"
+    email: user.email,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 60 * 15, // 15 min
+  },
+  process.env.JWT_SECRET
+);
+
+// Client decodes (NOT verifies — that's the server's job) to read role
+function parseJwt(token) {
+  const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(atob(base64));
+}
+// { sub: "user:123", role: "admin", email: "...", exp: 1234567890 }
+```
+
+**Never trust client-decoded JWT for security decisions on the server.** The server always re-verifies the signature. Client-side decoding is only for rendering UI (showing user name, conditionally showing buttons).
 
 ---
 
 ### 4.2 Permission-Based Access Control
 
-Checks explicit permissions, not role names. More granular, more flexible.
+Checks explicit permissions, not role names. More granular — a user can have a mix of permissions regardless of their role label.
 
 ```js
 // JWT payload — permissions as array of strings
-{
-  sub: "user:123",
-  permissions: ["doc:read", "doc:sign", "report:export"]
-}
+// { sub: "user:123", permissions: ["doc:read", "doc:sign", "report:export"] }
+```
+
+```jsx
+// src/auth/PermissionGuard.jsx
+import { useAuth } from "./AuthContext";
 
 // Hook
-function usePermission(permission) {
+export function usePermission(...permissions) {
   const { user } = useAuth();
-  return user?.permissions?.includes(permission) ?? false;
+  // supports single or multiple permissions (AND logic)
+  return permissions.every((p) => user?.permissions?.includes(p) ?? false);
 }
 
-// Component
-function Can({ permission, fallback = null, children }) {
+// Declarative component
+export function Can({ permission, fallback = null, children }) {
   const allowed = usePermission(permission);
   return allowed ? children : fallback;
 }
+```
 
-// Usage — shows UI only if user has permission
-<Can permission="doc:delete" fallback={<span>No access</span>}>
-  <DeleteButton onClick={handleDelete} />
-</Can>
+```jsx
+// Usage
+import { Can, usePermission } from "../auth/PermissionGuard";
 
-// Imperative check
-function handleExport() {
-  if (!user.permissions.includes("report:export")) {
-    toast.error("You don't have permission to export");
-    return;
+function DocumentPage() {
+  const canDelete = usePermission("doc:delete");
+
+  function handleDelete() {
+    if (!canDelete) {
+      alert("No permission");
+      return;
+    }
+    deleteDoc();
   }
-  doExport();
+
+  return (
+    <>
+      <Can permission="doc:sign">
+        <SignButton />
+      </Can>
+
+      <Can permission="doc:delete" fallback={<p>Read-only</p>}>
+        <DeleteButton onClick={handleDelete} />
+      </Can>
+    </>
+  );
 }
 ```
 
-**Permission naming convention:** `resource:action` or `resource:action:scope`
+**Permission naming convention:**
 ```
-doc:read
-doc:write
-doc:delete
-doc:sign
-admin:users:manage
-billing:invoices:view
+resource:action           →  doc:read, doc:sign, doc:delete
+resource:action:scope     →  admin:users:manage, billing:invoices:view
 ```
 
 ---
 
 ### 4.3 Attribute-Based Access Control (ABAC)
 
-The most powerful and flexible model. Access decisions use a policy evaluated against multiple attributes:
-
-- **Subject attributes** — user.role, user.department, user.clearanceLevel
-- **Resource attributes** — doc.ownerId, doc.status, doc.classification
-- **Environment attributes** — time of day, IP address, device type
+The most powerful model. Access is determined by a **policy** evaluated against user attributes + resource attributes + environment context at runtime.
 
 ```js
-// Policy as code
-const policies = {
-  "doc:sign": (user, doc, env) =>
+// src/auth/policies.js
+export const policies = {
+  "doc:sign": (user, doc) =>
     user.role === "signer" &&
     doc.status === "pending" &&
     doc.assignedSigners.includes(user.id) &&
     !doc.isExpired,
 
-  "doc:delete": (user, doc, env) =>
-    (user.role === "admin") ||
+  "doc:delete": (user, doc) =>
+    user.role === "admin" ||
     (user.id === doc.ownerId && doc.status === "draft"),
 
-  "doc:view": (user, doc, env) =>
+  "doc:view": (user, doc) =>
     doc.ownerId === user.id ||
     doc.sharedWith.includes(user.id) ||
     user.role === "admin",
 };
 
-function can(action, user, resource, env = {}) {
-  const policy = policies[action];
-  if (!policy) return false;
-  return policy(user, resource, env);
+export function can(action, user, resource) {
+  return policies[action]?.(user, resource) ?? false;
+}
+```
+
+```jsx
+// Hook that takes the resource as well
+export function useAbac(action, resource) {
+  const { user } = useAuth();
+  if (!user || !resource) return false;
+  return can(action, user, resource);
 }
 
 // Usage
-if (can("doc:sign", currentUser, document)) {
-  showSignButton();
+function DocumentCard({ doc }) {
+  const canSign = useAbac("doc:sign", doc);
+  const canDelete = useAbac("doc:delete", doc);
+
+  return (
+    <div>
+      <h3>{doc.title}</h3>
+      {canSign && <SignButton />}
+      {canDelete && <DeleteButton />}
+    </div>
+  );
 }
 ```
 
@@ -428,33 +764,54 @@ if (can("doc:sign", currentUser, document)) {
 
 ### 4.4 Hierarchical Roles
 
-Some systems need role inheritance:
+```
+superadmin (100)
+  └── admin (80)
+        └── manager (60)
+              └── signer (40)
+                    └── viewer (20)
+```
 
-```
-superadmin
-  └── admin
-        └── manager
-              └── user
-                    └── guest
-```
+`hasMinRole("manager", "signer")` → `true` — manager inherits signer's access.  
+`hasMinRole("signer", "admin")` → `false` — signer can't do admin things.
 
 ```js
-const ROLE_HIERARCHY = {
-  superadmin: 100,
-  admin: 80,
-  manager: 60,
-  user: 40,
-  guest: 20,
-};
-
-function hasMinRole(userRole, requiredRole) {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+// Already defined in roles.js above
+export function hasMinRole(userRole, requiredRole) {
+  return (ROLE_HIERARCHY[userRole] ?? 0) >= (ROLE_HIERARCHY[requiredRole] ?? 0);
 }
-
-// "manager" can access anything that needs "user" or lower
-hasMinRole("manager", "user"); // true
-hasMinRole("user", "admin");   // false
 ```
+
+---
+
+### Complete File Structure
+
+```
+src/
+  auth/
+    AuthContext.jsx     ← createContext + AuthProvider + useAuth()
+    ProtectedRoute.jsx  ← route-level guard (uses useAuth)
+    RoleGuard.jsx       ← component-level RBAC (uses useAuth)
+    PermissionGuard.jsx ← permission-based guard (uses useAuth)
+    roles.js            ← ROLE_HIERARCHY, ROLE_PERMISSIONS, hasMinRole
+    policies.js         ← ABAC policy functions
+  pages/
+    LoginPage.jsx       ← uses useAuth().login
+    Dashboard.jsx       ← uses useRole() / RoleGuard
+    AdminPanel.jsx      ← behind ProtectedRoute requiredRole="admin"
+  main.jsx              ← wraps App in <AuthProvider>
+  App.jsx               ← defines Routes with ProtectedRoute
+```
+
+**The dependency chain:**
+```
+AuthProvider (in main.jsx)
+  └── creates context with { user, status, login, logout }
+        └── useAuth() reads that context
+              └── ProtectedRoute, RoleGuard, Can, useRole, useAbac all call useAuth()
+```
+
+If `useAuth()` throws `"must be used inside AuthProvider"` — you forgot to wrap your app with `<AuthProvider>` in `main.jsx`.
 
 ---
 
