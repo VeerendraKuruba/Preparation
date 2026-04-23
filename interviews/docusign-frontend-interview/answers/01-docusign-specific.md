@@ -203,158 +203,107 @@ console.log(game.makeMove(0, 0));   // game already over
 - On `get`, check `Date.now()` against `expiresAt`; if expired, remove and return `null`
 - Expose `set`, `get`, `delete`, `clear`, and `has` methods mirroring the localStorage API
 - Optionally register a periodic cleanup to flush all stale keys proactively
+- Implemented functionally — no class, returns a plain object of methods
 
 ```js
-class TTLCache {
-  /**
-   * @param {Object} options
-   * @param {string} [options.prefix='ttlcache:'] - Key namespace prefix
-   * @param {number} [options.defaultTTL=60000] - Default TTL in milliseconds
-   * @param {number} [options.cleanupInterval=0] - Auto-cleanup interval in ms (0 = disabled)
-   * @param {Storage} [options.storage=localStorage] - Pluggable storage backend
-   */
-  constructor({
-    prefix = 'ttlcache:',
-    defaultTTL = 60_000,
-    cleanupInterval = 0,
-    storage = localStorage,
-  } = {}) {
-    this._prefix = prefix;
-    this._defaultTTL = defaultTTL;
-    this._storage = storage;
-    this._cleanupTimer = null;
+const createTTLCache = ({ prefix = 'ttl:', cleanupIntervalMs = 0 } = {}) => {
+  const toKey = (key) => `${prefix}${key}`;
 
-    if (cleanupInterval > 0) {
-      this._cleanupTimer = setInterval(() => this.flush(), cleanupInterval);
-    }
-  }
+  const serialize = (value, ttlMs) => JSON.stringify({
+    value,
+    expiresAt: ttlMs > 0 ? Date.now() + ttlMs : null, // null = no expiry
+  });
 
-  /** @private */
-  _key(key) {
-    return `${this._prefix}${key}`;
-  }
+  const deserialize = (raw) => {
+    try { return JSON.parse(raw); } catch { return null; }
+  };
 
-  /**
-   * Store a value with an optional TTL.
-   * @param {string} key
-   * @param {*} value - Must be JSON-serialisable
-   * @param {number} [ttl] - TTL in ms; falls back to defaultTTL
-   */
-  set(key, value, ttl = this._defaultTTL) {
-    const record = {
-      value,
-      expiresAt: Date.now() + ttl,
-    };
-    try {
-      this._storage.setItem(this._key(key), JSON.stringify(record));
-    } catch (e) {
-      // Handle quota exceeded or private-browsing restrictions
-      console.warn('[TTLCache] setItem failed:', e);
-    }
-  }
+  const isExpired = (entry) => entry.expiresAt !== null && Date.now() > entry.expiresAt;
 
-  /**
-   * Retrieve a value. Returns null if missing or expired.
-   * @param {string} key
-   * @returns {*|null}
-   */
-  get(key) {
-    const raw = this._storage.getItem(this._key(key));
+  // --- core methods ---
+
+  const set = (key, value, ttlMs = 0) => {
+    localStorage.setItem(toKey(key), serialize(value, ttlMs));
+  };
+
+  const get = (key) => {
+    const raw = localStorage.getItem(toKey(key));
     if (raw === null) return null;
 
-    let record;
-    try {
-      record = JSON.parse(raw);
-    } catch {
-      this.delete(key);
+    const entry = deserialize(raw);
+    if (!entry) return null;
+
+    if (isExpired(entry)) {
+      localStorage.removeItem(toKey(key));
       return null;
     }
 
-    if (Date.now() > record.expiresAt) {
-      this.delete(key);
-      return null;
-    }
+    return entry.value;
+  };
 
-    return record.value;
-  }
+  const del = (key) => localStorage.removeItem(toKey(key));
 
-  /**
-   * Check whether a key exists and has not expired.
-   * @param {string} key
-   * @returns {boolean}
-   */
-  has(key) {
-    return this.get(key) !== null;
-  }
+  // has is derived from get — inherits lazy expiry automatically
+  const has = (key) => get(key) !== null;
 
-  /**
-   * Remove a specific key.
-   * @param {string} key
-   */
-  delete(key) {
-    this._storage.removeItem(this._key(key));
-  }
+  // Removes only keys owned by this cache instance (respects prefix)
+  const clear = () => {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith(prefix))
+      .forEach((k) => localStorage.removeItem(k));
+  };
 
-  /**
-   * Remove ALL keys managed by this cache instance (respects prefix).
-   */
-  clear() {
-    const keysToRemove = [];
-    for (let i = 0; i < this._storage.length; i++) {
-      const k = this._storage.key(i);
-      if (k && k.startsWith(this._prefix)) {
-        keysToRemove.push(k);
-      }
-    }
-    keysToRemove.forEach((k) => this._storage.removeItem(k));
-  }
+  // Proactively evict all expired keys in this namespace
+  const flush = () => {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith(prefix))
+      .forEach((k) => {
+        const entry = deserialize(localStorage.getItem(k));
+        if (entry && isExpired(entry)) localStorage.removeItem(k);
+      });
+  };
 
-  /**
-   * Proactively remove all expired keys (useful for periodic cleanup).
-   */
-  flush() {
-    const now = Date.now();
-    for (let i = this._storage.length - 1; i >= 0; i--) {
-      const k = this._storage.key(i);
-      if (!k || !k.startsWith(this._prefix)) continue;
-      try {
-        const record = JSON.parse(this._storage.getItem(k));
-        if (now > record.expiresAt) {
-          this._storage.removeItem(k);
-        }
-      } catch {
-        this._storage.removeItem(k);
-      }
-    }
-  }
+  // Optional periodic cleanup — returns a stop function
+  let intervalId = null;
 
-  /** Stop the automatic cleanup timer. */
-  destroy() {
-    if (this._cleanupTimer) {
-      clearInterval(this._cleanupTimer);
-      this._cleanupTimer = null;
-    }
-  }
-}
+  const startCleanup = (intervalMs = cleanupIntervalMs) => {
+    if (intervalId !== null) return;
+    intervalId = setInterval(flush, intervalMs);
+  };
+
+  const stopCleanup = () => {
+    clearInterval(intervalId);
+    intervalId = null;
+  };
+
+  if (cleanupIntervalMs > 0) startCleanup();
+
+  return { set, get, delete: del, has, clear, flush, startCleanup, stopCleanup };
+};
 
 // --- Usage ---
-const cache = new TTLCache({ defaultTTL: 5000, cleanupInterval: 10_000 });
+const cache = createTTLCache({ prefix: 'app:', cleanupIntervalMs: 5000 });
 
-cache.set('user', { id: 42, name: 'Alice' });       // expires in 5 s (default)
-cache.set('session', 'abc123', 30_000);             // expires in 30 s
+cache.set('session', { userId: 42, role: 'admin' }, 2000); // expires in 2 s
+cache.set('theme', 'dark');                                 // no expiry
 
-console.log(cache.get('user'));                      // { id: 42, name: 'Alice' }
-console.log(cache.has('session'));                   // true
+console.log(cache.has('session'));    // true
+console.log(cache.get('session'));    // { userId: 42, role: 'admin' }
+console.log(cache.get('theme'));      // 'dark'
 
 setTimeout(() => {
-  console.log(cache.get('user'));                    // null — expired
-}, 6000);
+  console.log(cache.get('session')); // null — expired + auto-deleted
+  console.log(cache.has('theme'));   // true — no expiry
+  cache.stopCleanup();
+}, 2100);
 ```
 
-**Considerations:**
-- `flush()` iterates backwards to safely remove during iteration
-- `destroy()` prevents memory leaks when the instance is discarded
-- Pluggable `storage` parameter makes it testable with a Map-based mock
+**Key points:**
+- `expiresAt: null` means no expiry — safe to use as a plain persistent cache
+- `has` delegates to `get` so expired items evict themselves on any access path
+- `clear` is namespace-scoped — won't nuke unrelated localStorage keys
+- `flush` can be called manually (e.g. on `visibilitychange`) or driven by the optional interval
+- `startCleanup` / `stopCleanup` give the caller full lifecycle control
 
 ---
 
