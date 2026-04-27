@@ -71,7 +71,10 @@
       "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/106-construct-binary-tree-from-inorder-and-postorder-traversal.js)",
       "Bash(git mv *)",
       "Bash(git add *)",
-      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/binary-trees/bfs-traversal.js)"
+      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/binary-trees/bfs-traversal.js)",
+      "Bash(npx --yes vite --version)",
+      "Bash(npm list *)",
+      "Bash(ln -s /Users/kveerendra/Documents/Work/Preparation/react_new/concentric-app/node_modules /Users/kveerendra/Documents/Work/Preparation/react_new/rating-app/node_modules)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",
