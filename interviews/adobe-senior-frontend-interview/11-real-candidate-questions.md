@@ -55,12 +55,336 @@ class LRUCache {
 }
 ```
 
-**Senior follow-ups they ask:**
-- "Now without using `Map`'s ordering — implement the doubly linked list version." (Tests if you actually understand the data structure.)
-- "Make it thread-safe in a multi-tab scenario." (Discussion: `BroadcastChannel` + `localStorage` + serialization, or `SharedArrayBuffer` + `Atomics`.)
-- "Add TTL on each entry." (Add `expiresAt` to node, lazy-check on `get`.)
-
 **Complexity:** O(1) get/put, O(capacity) space.
+
+---
+
+#### Follow-up 1.A — DLL version (no `Map` ordering)
+
+The `Map` trick is fine, but interviewers want to see you can build it from scratch with a doubly-linked list. The DLL gives O(1) splice; the hash gives O(1) lookup. Use **head/tail sentinels** — they remove every "is this the first/last node?" branch.
+
+```js
+class Node {
+  constructor(key, value) {
+    this.key = key;
+    this.value = value;
+    this.prev = null;
+    this.next = null;
+  }
+}
+
+class LRUCache {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.map = new Map(); // key → Node (Map purely for O(1) lookup, not ordering)
+
+    // Sentinel head and tail simplify edge cases
+    this.head = new Node(null, null); // most-recently-used side
+    this.tail = new Node(null, null); // least-recently-used side
+    this.head.next = this.tail;
+    this.tail.prev = this.head;
+  }
+
+  // ----- DLL primitives -----
+
+  _remove(node) {
+    node.prev.next = node.next;
+    node.next.prev = node.prev;
+  }
+
+  _addToFront(node) {
+    node.next = this.head.next;
+    node.prev = this.head;
+    this.head.next.prev = node;
+    this.head.next = node;
+  }
+
+  _moveToFront(node) {
+    this._remove(node);
+    this._addToFront(node);
+  }
+
+  // ----- Public API -----
+
+  get(key) {
+    const node = this.map.get(key);
+    if (!node) return -1;
+    this._moveToFront(node);
+    return node.value;
+  }
+
+  put(key, value) {
+    const existing = this.map.get(key);
+    if (existing) {
+      existing.value = value;
+      this._moveToFront(existing);
+      return;
+    }
+    if (this.map.size >= this.capacity) {
+      const lru = this.tail.prev;     // node just before tail sentinel
+      this._remove(lru);
+      this.map.delete(lru.key);
+    }
+    const node = new Node(key, value);
+    this._addToFront(node);
+    this.map.set(key, node);
+  }
+}
+```
+
+**Mental model:**
+```
+head ⇄ [most recent] ⇄ … ⇄ [oldest] ⇄ tail
+        ↑ insert here       ↑ evict here
+```
+
+**Why sentinels matter:** without them, every `_remove` needs `if (node === head) head = node.next` and every `_addToFront` needs `if (head) head.prev = node`. With sentinels, those branches vanish — fewer bugs under interview pressure.
+
+**Edge cases interviewer will throw at you:**
+- `capacity = 0` — every `put` no-ops. Guard with `if (this.capacity === 0) return;` in `put`.
+- `put` for an existing key with a different value — must update value AND mark recent.
+- Duplicate `get(key)` — returns the same value but still bumps recency.
+
+---
+
+#### Follow-up 1.B — TTL (Time-To-Live) per Entry
+
+**Spec:** `put(key, value, ttlMs)` — entry expires after `ttlMs`. `get` returns `-1` for expired entries.
+
+**Two strategies — interviewer wants you to pick *and* defend:**
+
+| | Lazy expiry | Active expiry (setTimeout) |
+|---|---|---|
+| Memory | Holds expired entries until evicted by LRU or touched | Removes promptly |
+| CPU | None (just a check on `get`) | One timer per entry |
+| Correctness | Expired entries waste a cache slot | Always fresh |
+| At Adobe scale | **Preferred** — 1M entries × 1 timer = bad | Only for low-N caches |
+
+**Lazy version (the right answer for 99% of cases):**
+
+```js
+class TTLNode {
+  constructor(key, value, expiresAt) {
+    this.key = key;
+    this.value = value;
+    this.expiresAt = expiresAt; // ms epoch; Infinity if no TTL
+    this.prev = null;
+    this.next = null;
+  }
+}
+
+class LRUCacheTTL {
+  constructor(capacity, defaultTtlMs = Infinity) {
+    this.capacity = capacity;
+    this.defaultTtl = defaultTtlMs;
+    this.map = new Map();
+    this.head = new TTLNode(null, null, 0);
+    this.tail = new TTLNode(null, null, 0);
+    this.head.next = this.tail;
+    this.tail.prev = this.head;
+  }
+
+  _remove(node) {
+    node.prev.next = node.next;
+    node.next.prev = node.prev;
+  }
+
+  _addToFront(node) {
+    node.next = this.head.next;
+    node.prev = this.head;
+    this.head.next.prev = node;
+    this.head.next = node;
+  }
+
+  _isExpired(node) {
+    return node.expiresAt <= Date.now();
+  }
+
+  _evictNode(node) {
+    this._remove(node);
+    this.map.delete(node.key);
+  }
+
+  get(key) {
+    const node = this.map.get(key);
+    if (!node) return -1;
+    if (this._isExpired(node)) {
+      this._evictNode(node);     // lazy expiry — clean up on access
+      return -1;
+    }
+    this._remove(node);
+    this._addToFront(node);
+    return node.value;
+  }
+
+  put(key, value, ttlMs = this.defaultTtl) {
+    const expiresAt = ttlMs === Infinity ? Infinity : Date.now() + ttlMs;
+    const existing = this.map.get(key);
+
+    if (existing) {
+      existing.value = value;
+      existing.expiresAt = expiresAt;
+      this._remove(existing);
+      this._addToFront(existing);
+      return;
+    }
+
+    if (this.map.size >= this.capacity) {
+      // Try to evict an expired entry first (free win)
+      const lru = this.tail.prev;
+      this._evictNode(lru);
+    }
+
+    const node = new TTLNode(key, value, expiresAt);
+    this._addToFront(node);
+    this.map.set(key, node);
+  }
+}
+```
+
+**Why `Date.now()` not `performance.now()`:** TTLs are absolute (expires at wall-clock time). `performance.now()` is a monotonic clock from page load — fine for measuring durations, wrong for "expires in 5 minutes" semantics that should survive page reloads if you persist the cache.
+
+**Active-expiry variant (when N is small, e.g., 50-entry session cache):**
+
+```js
+put(key, value, ttlMs) {
+  // ... DLL/map insertion ...
+  if (ttlMs !== Infinity) {
+    node.timer = setTimeout(() => this._evictNode(node), ttlMs);
+  }
+}
+
+_evictNode(node) {
+  if (node.timer) clearTimeout(node.timer);
+  this._remove(node);
+  this.map.delete(node.key);
+}
+```
+
+**Senior signal:** mention that active expiry is the wrong default — Adobe Express may have 100k cached thumbnails; 100k `setTimeout` handles bloat the timer wheel and keep nodes from GC.
+
+---
+
+#### Follow-up 1.C — Thread-safe Across Tabs (the *real* senior question)
+
+JavaScript on a single page is single-threaded, so within one tab you don't need locks. But two tabs of Adobe Express opening the same document each have their *own* JS heap — your LRU is duplicated, and writes from Tab A don't update Tab B.
+
+Two production-grade approaches. Interviewer wants tradeoffs:
+
+##### Option A — `BroadcastChannel` + per-tab in-memory LRU (most common)
+
+Each tab keeps its own LRU. Mutations broadcast; peers replay them.
+
+```js
+class CrossTabLRU {
+  constructor(capacity, name = 'lru') {
+    this.local = new LRUCache(capacity);  // the DLL version above
+    this.channel = new BroadcastChannel(name);
+    this.channel.onmessage = (e) => this._onRemote(e.data);
+  }
+
+  _onRemote(msg) {
+    // Apply remotely-originated mutation without re-broadcasting
+    if (msg.op === 'put')   this.local.put(msg.key, msg.value);
+    if (msg.op === 'evict') this.local.evict?.(msg.key);
+  }
+
+  get(key) {
+    return this.local.get(key);
+  }
+
+  put(key, value) {
+    this.local.put(key, value);
+    this.channel.postMessage({ op: 'put', key, value });
+  }
+}
+```
+
+**Tradeoffs:**
+- ✅ Simple. Works in every modern browser. Survives tab open/close.
+- ⚠️ **Eventually consistent** — there's a microtask gap between a write in Tab A and Tab B receiving the message. Two writes from two tabs to the same key in the same tick can clobber each other.
+- ⚠️ Each tab's LRU eviction order diverges (Tab A's "least recently used" isn't Tab B's). Acceptable for caches — the contract is "may evict at any time" anyway.
+- ⚠️ Values must be structured-cloneable (no functions, no DOM nodes).
+
+**When to use:** caches, not source-of-truth state. Adobe Express thumbnail cache → fine. Doc content → use CRDT instead.
+
+##### Option B — `localStorage` events (legacy fallback)
+
+`localStorage` writes fire a `storage` event in *other* tabs. Same pattern, worse:
+- Serialization round-trip every message.
+- Sync I/O — `setItem` blocks the main thread.
+- Quota limit (~5MB).
+
+Mention it for compatibility (works in IE11), don't recommend it.
+
+##### Option C — `SharedArrayBuffer` + `Atomics` (the "show off depth" answer)
+
+True shared memory between tabs *in the same agent cluster* (same-origin, COOP+COEP headers set). One LRU lives in shared memory; both tabs read/write directly.
+
+**Reality check:**
+- Requires `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` on every response. Adobe Experience Cloud's third-party embeds break with COEP.
+- `SharedArrayBuffer` is a `Uint8Array` — you can't store object references, only byte data. Implementing an LRU on raw bytes means writing your own allocator, linked-list pointers, and hash table in the buffer. Massive complexity.
+- `Atomics.wait` / `Atomics.notify` give you mutex primitives — but you must hand-build the locking discipline. Easy to deadlock.
+
+**When to use:** WASM apps that already need shared memory (Photoshop on Web, Premiere on Web). Not for a typical React app.
+
+```js
+// Sketch — just the locking idea, not a full implementation
+const buf = new SharedArrayBuffer(1024);
+const lock = new Int32Array(buf, 0, 1);
+
+function withLock(fn) {
+  while (Atomics.compareExchange(lock, 0, 0, 1) !== 0) {
+    Atomics.wait(lock, 0, 1);  // park if locked
+  }
+  try { return fn(); }
+  finally {
+    Atomics.store(lock, 0, 0);
+    Atomics.notify(lock, 0, 1);
+  }
+}
+```
+
+##### Option D — Service Worker as single owner (cleanest)
+
+The service worker is **one instance across all tabs** of the origin. Make the SW the LRU's owner; tabs `postMessage` to it for `get`/`put`.
+
+```js
+// Tab side
+async function get(key) {
+  const ch = new MessageChannel();
+  navigator.serviceWorker.controller.postMessage({ op: 'get', key }, [ch.port2]);
+  return new Promise((res) => ch.port1.onmessage = (e) => res(e.data));
+}
+
+// Service worker side
+const lru = new LRUCache(1000);
+self.addEventListener('message', (e) => {
+  const { op, key, value } = e.data;
+  const port = e.ports[0];
+  if (op === 'get') port.postMessage(lru.get(key));
+  if (op === 'put') { lru.put(key, value); port?.postMessage(true); }
+});
+```
+
+**Tradeoffs:**
+- ✅ Single source of truth — no consistency hand-waving.
+- ⚠️ Every `get` is async (round-trip through `postMessage`). Won't fit a hot path.
+- ⚠️ SW can be killed by the browser; cache evaporates. Re-populate on activate.
+
+**When to use:** shared *expensive-to-compute* caches like rendered thumbnail blobs. Don't put hot-path UI state here.
+
+---
+
+#### How to Answer in the Interview
+
+State the three follow-ups in this order, and offer to code whichever they pick:
+
+1. *"For DLL — head/tail sentinels, hash for lookup, list for ordering. About 40 lines."*
+2. *"For TTL — lazy by default, store `expiresAt`, check on `get`. Active-expiry only for small N because of timer wheel cost."*
+3. *"For multi-tab — `BroadcastChannel` for most caches; service worker for shared expensive caches; `SharedArrayBuffer + Atomics` only if we already need shared memory for WASM."*
+
+That ordering signals you know the *cost* of each option — the senior bar isn't "I know all these APIs", it's "I know which one fits".
 
 ---
 
