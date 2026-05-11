@@ -37,10 +37,14 @@ All these products share the Spectrum design system and accessibility-first cult
 
 ### Official Focus Areas (Recruiter-confirmed, 2026)
 
-| Round | Focus |
-|-------|-------|
-| **R1** | DS/Algo, coding proficiency & problem-solving fundamentals → see [04-dsa.md](./04-dsa.md) |
-| **R2** | Frontend Concepts & Problem Solving — **deep JS**, **browser APIs**, **UI architecture**, hands-on coding → see [01-javascript-polyfills.md](./01-javascript-polyfills.md), [09-browser-apis.md](./09-browser-apis.md), [10-ui-architecture.md](./10-ui-architecture.md), [03-machine-coding.md](./03-machine-coding.md) |
+> **Start here:** [00-rounds.md](./00-rounds.md) — full round-by-round playbook (format, what they evaluate, sample questions, common mistakes, prep checklist per round).
+>
+> **Drill from real Q&A:** [11-real-candidate-questions.md](./11-real-candidate-questions.md) — 45 questions actually asked at Adobe with detailed answers (web-sourced from CS-II, MTS-2, SDE-3, Senior FE candidate write-ups 2023–2026).
+
+| Round | Focus | Deep dives |
+|-------|-------|------------|
+| **R1** | DS/Algo, coding proficiency & problem-solving fundamentals | [04-dsa.md](./04-dsa.md) |
+| **R2** | Frontend Concepts & Problem Solving — **deep JS**, **browser APIs**, **UI architecture**, hands-on coding | [01-javascript-polyfills.md](./01-javascript-polyfills.md), [09-browser-apis.md](./09-browser-apis.md), [10-ui-architecture.md](./10-ui-architecture.md), [03-machine-coding.md](./03-machine-coding.md) |
 
 > Difficulty rating: **2.6 / 5** (Glassdoor 2025). Process is 50% positive rated — preparation makes the difference.
 > All rounds in one day (or across 2 days for senior roles).
@@ -79,6 +83,7 @@ All these products share the Spectrum design system and accessibility-first cult
 
 | File | What It Covers |
 |------|----------------|
+| [00-rounds.md](./00-rounds.md) | **Start here** — recruiter-confirmed R1/R2 round-by-round playbook, prep checklist |
 | [01-javascript-polyfills.md](./01-javascript-polyfills.md) | Polyfills (map, filter, reduce, bind, Promise.all), output questions, vanilla JS |
 | [02-react-typescript.md](./02-react-typescript.md) | React hooks, performance, TypeScript patterns, controlled forms |
 | [03-machine-coding.md](./03-machine-coding.md) | Build UI components: star rating, autocomplete, tabs, drag-drop, infinite scroll |
@@ -89,3 +94,4 @@ All these products share the Spectrum design system and accessibility-first cult
 | [08-adobe-domain.md](./08-adobe-domain.md) | Products, React Spectrum, GenStudio, Experience Cloud, Spectrum 2 |
 | [09-browser-apis.md](./09-browser-apis.md) | **R2** — Event loop, IntersectionObserver, storage, Web Workers, rAF, Fetch/AbortController, Canvas, CORS, Shadow DOM |
 | [10-ui-architecture.md](./10-ui-architecture.md) | **R2** — Compound components, state tiers, render perf, code splitting, micro-frontends, design systems, CRDT/OT |
+| [11-real-candidate-questions.md](./11-real-candidate-questions.md) | **Real reported Q&A** — 45 questions actually asked at Adobe (CS-II, MTS-2, SDE-3, Senior FE) with detailed answers, web-sourced from candidate write-ups 2023–2026 |
