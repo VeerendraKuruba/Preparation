@@ -35,6 +35,13 @@ All these products share the Spectrum design system and accessibility-first cult
 | 4 | Behavioral / Cross-functional | 45 min | STAR stories, Adobe values, collaboration, conflict |
 | 5 | Hiring Manager | 45 min | Technical vision, career trajectory, team fit |
 
+### Official Focus Areas (Recruiter-confirmed, 2026)
+
+| Round | Focus |
+|-------|-------|
+| **R1** | DS/Algo, coding proficiency & problem-solving fundamentals → see [04-dsa.md](./04-dsa.md) |
+| **R2** | Frontend Concepts & Problem Solving — **deep JS**, **browser APIs**, **UI architecture**, hands-on coding → see [01-javascript-polyfills.md](./01-javascript-polyfills.md), [09-browser-apis.md](./09-browser-apis.md), [10-ui-architecture.md](./10-ui-architecture.md), [03-machine-coding.md](./03-machine-coding.md) |
+
 > Difficulty rating: **2.6 / 5** (Glassdoor 2025). Process is 50% positive rated — preparation makes the difference.
 > All rounds in one day (or across 2 days for senior roles).
 
@@ -80,3 +87,5 @@ All these products share the Spectrum design system and accessibility-first cult
 | [06-css-accessibility.md](./06-css-accessibility.md) | CSS deep dive + Adobe's accessibility-first culture |
 | [07-behavioral.md](./07-behavioral.md) | Adobe values STAR stories, creativity, collaboration, ownership |
 | [08-adobe-domain.md](./08-adobe-domain.md) | Products, React Spectrum, GenStudio, Experience Cloud, Spectrum 2 |
+| [09-browser-apis.md](./09-browser-apis.md) | **R2** — Event loop, IntersectionObserver, storage, Web Workers, rAF, Fetch/AbortController, Canvas, CORS, Shadow DOM |
+| [10-ui-architecture.md](./10-ui-architecture.md) | **R2** — Compound components, state tiers, render perf, code splitting, micro-frontends, design systems, CRDT/OT |
