@@ -36,23 +36,22 @@ class AsyncTaskQueue {
     }
   }
 
-  _run(task) {
+  async _run(task) {
     this.running++;
-    Promise.resolve()
-      .then(() => task())
-      .then(
-        () => { this.resolved++; },
-        () => { this.rejected++; }
-      )
-      .then(() => {
-        this.running--;
-        if (this.waiting.length > 0) {
-          this._run(this.waiting.shift());
-        } else if (this.running === 0 && this.callback && !this.done) {
-          this.done = true;
-          this.callback(this.resolved, this.rejected);
-        }
-      });
+    try {
+      await task();
+      this.resolved++;
+    } catch {
+      this.rejected++;
+    } finally {
+      this.running--;
+      if (this.waiting.length > 0) {
+        this._run(this.waiting.shift());
+      } else if (this.running === 0 && this.callback && !this.done) {
+        this.done = true;
+        this.callback(this.resolved, this.rejected);
+      }
+    }
   }
 }
 

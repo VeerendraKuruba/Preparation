@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Chess — Machine Coding</title>
+<!--
+  Playable 2-player chess (hot-seat). Open this file in a browser.
+
+  Scope (interview-sized, ~45-60 min):
+    - 8x8 board, click-to-select, click-to-move
+    - Per-piece move validation (pawn, knight, bishop, rook, queen, king)
+    - Captures, turn switching, pawn promotion → queen
+    - Highlight selected square + legal destinations
+    - Reset button, status line, captured pieces tray
+
+  Deliberately NOT included (would 2x the code):
+    - Check / checkmate / stalemate detection
+    - Castling, en passant
+    - Move history / undo
+    - AI opponent
+  These are mentioned as extensions in the JS comments where relevant.
+-->
+<style>
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #2b2b2b;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    margin: 0;
+  }
+  h1 { margin: 0 0 12px; font-weight: 500; }
+  #status {
+    margin: 8px 0 16px;
+    font-size: 18px;
+    min-height: 24px;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 64px);
+    grid-template-rows: repeat(8, 64px);
+    border: 4px solid #111;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  }
+  .square {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  .square.light { background: #f0d9b5; }
+  .square.dark  { background: #b58863; }
+  .square.selected { background: #f6f669 !important; }
+  .square.legal::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  .square.legal.capture::after {
+    width: 56px;
+    height: 56px;
+    background: transparent;
+    border: 3px solid rgba(200, 0, 0, 0.6);
+  }
+  .piece-white { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+  .piece-black { color: #111; }
+  #controls {
+    margin-top: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background: #4a9eff;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover { background: #3a8eef; }
+  .tray {
+    min-height: 32px;
+    width: 520px;
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    font-size: 24px;
+  }
+  .tray-label { font-size: 12px; color: #888; align-self: center; margin-right: 8px; }
+</style>
+</head>
+<body>
+  <h1>Chess</h1>
+  <div class="tray" id="captured-by-white">
+    <span class="tray-label">White captured:</span>
+  </div>
+  <div id="status">White to move</div>
+  <div id="board"></div>
+  <div class="tray" id="captured-by-black">
+    <span class="tray-label">Black captured:</span>
+  </div>
+  <div id="controls">
+    <button id="reset">Reset Game</button>
+  </div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ──────────────────────────────────────────────────────────────────────
+const SYMBOLS = {
+  white: { king: "♔", queen: "♕", rook: "♖", bishop: "♗", knight: "♘", pawn: "♙" },
+  black: { king: "♚", queen: "♛", rook: "♜", bishop: "♝", knight: "♞", pawn: "♟" },
+};
+
+// Board convention: row 0 is the top row (black's back rank),
+// row 7 is the bottom row (white's back rank). So white moves "up" (dr = -1).
+const BACK_RANK = ["rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"];
+
+const ROOK_DIRS   = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const BISHOP_DIRS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+const QUEEN_DIRS  = [...ROOK_DIRS, ...BISHOP_DIRS];
+const KING_DIRS   = QUEEN_DIRS;
+const KNIGHT_DELTAS = [
+  [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+  [1, -2],  [1, 2],  [2, -1],  [2, 1],
+];
+
+// ──────────────────────────────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────────────────────────────
+let state;
+
+function initialState() {
+  return {
+    board: initialBoard(),
+    turn: "white",
+    selected: null,      // { r, c } of selected piece, or null
+    legalMoves: [],      // [[r,c], ...] for currently selected piece
+    captured: { white: [], black: [] }, // pieces captured BY each color
+    gameOver: false,
+  };
+}
+
+function initialBoard() {
+  const empty = () => Array(8).fill(null);
+  const backRow = (color) => BACK_RANK.map((type) => ({ type, color }));
+  const pawnRow = (color) => Array(8).fill(null).map(() => ({ type: "pawn", color }));
+  return [
+    backRow("black"),
+    pawnRow("black"),
+    empty(), empty(), empty(), empty(),
+    pawnRow("white"),
+    backRow("white"),
+  ];
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// MOVE GENERATION — one function per piece type, all return [[r,c], ...]
+// ──────────────────────────────────────────────────────────────────────
+const inBounds = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+
+function pawnMoves(piece, r, c, board) {
+  const moves = [];
+  const dir = piece.color === "white" ? -1 : 1;
+  const startRow = piece.color === "white" ? 6 : 1;
+
+  // 1 forward (square must be empty)
+  if (inBounds(r + dir, c) && !board[r + dir][c]) {
+    moves.push([r + dir, c]);
+    // 2 forward from starting row (both squares must be empty)
+    if (r === startRow && !board[r + 2 * dir][c]) {
+      moves.push([r + 2 * dir, c]);
+    }
+  }
+  // Diagonal captures
+  for (const dc of [-1, 1]) {
+    const nr = r + dir;
+    const nc = c + dc;
+    if (inBounds(nr, nc) && board[nr][nc] && board[nr][nc].color !== piece.color) {
+      moves.push([nr, nc]);
+    }
+  }
+  // En passant would slot in here (need last-move state to detect it).
+  return moves;
+}
+
+function knightMoves(piece, r, c, board) {
+  return KNIGHT_DELTAS
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) =>
+      inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc].color !== piece.color)
+    );
+}
+
+function kingMoves(piece, r, c, board) {
+  return KING_DIRS
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) =>
+      inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc].color !== piece.color)
+    );
+  // Castling would extend this: scan rook same-rank, ensure empty between,
+  // neither piece has moved, king not in/through check.
+}
+
+// Sliding pieces (rook/bishop/queen) share logic: walk each direction until
+// blocked. Hitting an enemy piece = include that square then stop.
+function slidingMoves(piece, r, c, board, directions) {
+  const moves = [];
+  for (const [dr, dc] of directions) {
+    let nr = r + dr;
+    let nc = c + dc;
+    while (inBounds(nr, nc)) {
+      if (!board[nr][nc]) {
+        moves.push([nr, nc]);
+      } else {
+        if (board[nr][nc].color !== piece.color) moves.push([nr, nc]); // capture
+        break; // blocked either way
+      }
+      nr += dr;
+      nc += dc;
+    }
+  }
+  return moves;
+}
+
+const MOVE_GENERATORS = {
+  pawn: pawnMoves,
+  knight: knightMoves,
+  king: kingMoves,
+  rook:   (p, r, c, b) => slidingMoves(p, r, c, b, ROOK_DIRS),
+  bishop: (p, r, c, b) => slidingMoves(p, r, c, b, BISHOP_DIRS),
+  queen:  (p, r, c, b) => slidingMoves(p, r, c, b, QUEEN_DIRS),
+};
+
+function getLegalMoves(r, c, board) {
+  const piece = board[r][c];
+  if (!piece) return [];
+  return MOVE_GENERATORS[piece.type](piece, r, c, board);
+  // Real chess: also filter out moves that leave own king in check.
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// CLICK HANDLING & STATE TRANSITIONS
+// ──────────────────────────────────────────────────────────────────────
+function onSquareClick(r, c) {
+  if (state.gameOver) return;
+  const piece = state.board[r][c];
+
+  // Case 1: no piece currently selected → try to select
+  if (state.selected === null) {
+    if (piece && piece.color === state.turn) {
+      state.selected = { r, c };
+      state.legalMoves = getLegalMoves(r, c, state.board);
+    }
+    render();
+    return;
+  }
+
+  // Case 2: clicked the same square → deselect
+  if (state.selected.r === r && state.selected.c === c) {
+    state.selected = null;
+    state.legalMoves = [];
+    render();
+    return;
+  }
+
+  // Case 3: clicked a legal destination → make the move
+  const isLegal = state.legalMoves.some(([nr, nc]) => nr === r && nc === c);
+  if (isLegal) {
+    makeMove(state.selected, { r, c });
+    render();
+    return;
+  }
+
+  // Case 4: clicked another of own pieces → reselect
+  if (piece && piece.color === state.turn) {
+    state.selected = { r, c };
+    state.legalMoves = getLegalMoves(r, c, state.board);
+    render();
+    return;
+  }
+
+  // Case 5: clicked empty / opponent piece that's not a legal target → deselect
+  state.selected = null;
+  state.legalMoves = [];
+  render();
+}
+
+function makeMove(from, to) {
+  const piece = state.board[from.r][from.c];
+  const target = state.board[to.r][to.c];
+
+  if (target) {
+    state.captured[state.turn].push(target);
+    // King capture ends the game (we don't implement checkmate detection;
+    // a real engine would prevent the king from ever being captured).
+    if (target.type === "king") state.gameOver = true;
+  }
+
+  state.board[to.r][to.c] = piece;
+  state.board[from.r][from.c] = null;
+
+  // Pawn promotion — auto-queen on reaching the back rank.
+  // A real UI would prompt the user to choose queen/rook/bishop/knight.
+  if (piece.type === "pawn" && (to.r === 0 || to.r === 7)) {
+    state.board[to.r][to.c] = { type: "queen", color: piece.color };
+  }
+
+  state.turn = state.turn === "white" ? "black" : "white";
+  state.selected = null;
+  state.legalMoves = [];
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// RENDERING — full re-render on every state change (small board, fine).
+// ──────────────────────────────────────────────────────────────────────
+function render() {
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const sq = document.createElement("div");
+      sq.className = "square " + ((r + c) % 2 === 0 ? "light" : "dark");
+
+      if (state.selected && state.selected.r === r && state.selected.c === c) {
+        sq.classList.add("selected");
+      }
+      const legalHere = state.legalMoves.some(([nr, nc]) => nr === r && nc === c);
+      if (legalHere) {
+        sq.classList.add("legal");
+        if (state.board[r][c]) sq.classList.add("capture");
+      }
+
+      const piece = state.board[r][c];
+      if (piece) {
+        sq.textContent = SYMBOLS[piece.color][piece.type];
+        sq.classList.add(piece.color === "white" ? "piece-white" : "piece-black");
+      }
+
+      sq.addEventListener("click", () => onSquareClick(r, c));
+      boardEl.appendChild(sq);
+    }
+  }
+
+  // Status
+  const statusEl = document.getElementById("status");
+  if (state.gameOver) {
+    // After a king capture, state.turn has already flipped to the loser.
+    const winner = state.turn === "white" ? "Black" : "White";
+    statusEl.textContent = `Game over — ${winner} wins!`;
+  } else {
+    const t = state.turn[0].toUpperCase() + state.turn.slice(1);
+    statusEl.textContent = `${t} to move`;
+  }
+
+  renderTray("captured-by-white", state.captured.white);
+  renderTray("captured-by-black", state.captured.black);
+}
+
+function renderTray(elId, pieces) {
+  const el = document.getElementById(elId);
+  el.querySelectorAll(".captured-piece").forEach((n) => n.remove());
+  for (const p of pieces) {
+    const span = document.createElement("span");
+    span.className = "captured-piece " + (p.color === "white" ? "piece-white" : "piece-black");
+    span.textContent = SYMBOLS[p.color][p.type];
+    el.appendChild(span);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────────────────
+document.getElementById("reset").addEventListener("click", () => {
+  state = initialState();
+  render();
+});
+
+state = initialState();
+render();
+</script>
+</body>
+</html>

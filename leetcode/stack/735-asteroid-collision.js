@@ -21,31 +21,35 @@
 var asteroidCollision = function (asteroids) {
   const stack = [];
 
-  for (const curr of asteroids) {
+  for (let i = 0, n = asteroids.length; i < n; i++) {
+    const curr = asteroids[i];
+
     if (curr > 0) {
-      // Moving right → no collision yet, add to stack
       stack.push(curr);
       continue;
     }
 
-    // curr is negative (moving left ←). It can only hit positives on the stack (moving right).
-    const size = -curr; // absolute size of current asteroid
+    const size = -curr;
 
-    // Pop every right-moving asteroid that is smaller (they explode)
-    while (stack.length > 0 && stack[stack.length - 1] > 0 && stack[stack.length - 1] < size) {
-      stack.pop();
+    // Resolve curr against stack: pop smaller rights; equal → both gone; bigger right → curr gone
+    while (true) {
+      const len = stack.length;
+      if (len === 0) {
+        stack.push(curr);
+        break;
+      }
+      const top = stack[len - 1];
+      if (top < 0) {
+        stack.push(curr);
+        break;
+      }
+      if (top < size) {
+        stack.pop();
+        continue;
+      }
+      if (top === size) stack.pop();
+      break;
     }
-
-    const top = stack[stack.length - 1];
-
-    if (stack.length > 0 && top === size) {
-      // Same size → both explode (pop the top, don't push curr)
-      stack.pop();
-    } else if (stack.length === 0 || top < 0) {
-      // Nothing to hit, or top is also left-moving → curr survives
-      stack.push(curr);
-    }
-    // else top > size → curr explodes, do nothing
   }
 
   return stack;

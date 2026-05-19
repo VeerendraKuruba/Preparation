@@ -75,7 +75,8 @@
       "Bash(npx --yes vite --version)",
       "Bash(npm list *)",
       "Bash(ln -s /Users/kveerendra/Documents/Work/Preparation/react_new/concentric-app/node_modules /Users/kveerendra/Documents/Work/Preparation/react_new/rating-app/node_modules)",
-      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/2-add-two-numbers.js)"
+      "Bash(node /Users/kveerendra/Documents/Work/Preparation/leetcode/2-add-two-numbers.js)",
+      "Bash(node leetcode/matrix/733-flood-fill.js)"
     ],
     "additionalDirectories": [
       "/Users/kveerendra/Documents/Work/Preparation",

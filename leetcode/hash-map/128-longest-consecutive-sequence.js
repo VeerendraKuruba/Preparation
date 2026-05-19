@@ -46,14 +46,12 @@ var longestConsecutive = function (nums) {
 };
 
 /**
- * Approach 2: Sort
- * - Sort the array
- * - Walk through, incrementing length if next = current + 1
- * - Skip duplicates (next === current)
- * - Reset length if gap > 1
+ * Approach 2: Set + sort
+ * - Dedupe with a Set, then sort unique values (no duplicate branch in the scan)
+ * - Walk through: extend length if next === prev + 1, else reset
  *
- * Time: O(n log n) — due to sort
- * Space: O(1)
+ * Time: O(n log n) — sort dominates
+ * Space: O(n) — Set + sorted copy (does not mutate nums)
  *
  * @param {number[]} nums
  * @return {number}
@@ -61,17 +59,16 @@ var longestConsecutive = function (nums) {
 var longestConsecutiveSort = function (nums) {
   if (!nums.length) return 0;
 
-  nums.sort((a, b) => a - b);
+  const sorted = [...new Set(nums)].sort((a, b) => a - b);
 
   let max = 1;
   let length = 1;
 
-  for (let i = 1; i < nums.length; i++) {
-    if (nums[i] === nums[i - 1]) continue;       // skip duplicate
-    if (nums[i] === nums[i - 1] + 1) {
-      max = Math.max(max, ++length);             // consecutive
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i - 1] + 1) {
+      max = Math.max(max, ++length);
     } else {
-      length = 1;                                // gap — reset
+      length = 1;
     }
   }
 
