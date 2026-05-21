@@ -1,0 +1,90 @@
+.file-explorer {
+  max-width: 420px;
+  margin: 24px auto;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.file-explorer h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #333;
+}
+
+.tree {
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.file-node {
+  margin: 2px 0;
+}
+
+.node-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.node-row.folder {
+  cursor: pointer;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.node-row.file {
+  cursor: pointer;
+  color: #374151;
+}
+
+.node-row.folder:hover,
+.node-row.file:hover {
+  background: #f3f4f6;
+}
+
+.node-row.selected {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.node-chevron {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  color: #16a34a;
+}
+
+.node-chevron:hover {
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 4px;
+}
+
+.node-chevron-spacer {
+  display: inline-block;
+  width: 28px;
+}
+
+.node-type-icon {
+  font-size: 16px;
+}
+
+.node-row .name {
+  font-size: 14px;
+}
+
+.children {
+  margin: 0;
+  padding: 0;
+}

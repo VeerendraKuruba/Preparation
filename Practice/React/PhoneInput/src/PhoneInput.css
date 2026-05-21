@@ -1,0 +1,22 @@
+.phone-input {
+  font-size: 16px;
+  padding: 12px 16px;
+  border: 1px solid #c4c4c4;
+  border-radius: 6px;
+  outline: none;
+  min-width: 240px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.phone-input:hover {
+  border-color: #888;
+}
+
+.phone-input:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15);
+}
+
+.phone-input::placeholder {
+  color: #999;
+}

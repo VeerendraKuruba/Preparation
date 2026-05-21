@@ -1,0 +1,68 @@
+.phone-form {
+  padding: 1.5rem;
+  max-width: 360px;
+}
+
+.phone-form__field {
+  margin-bottom: 1.25rem;
+}
+
+.phone-form__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.phone-form__select,
+.phone-form__input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.phone-form__select {
+  cursor: pointer;
+}
+
+.phone-form__select:focus,
+.phone-form__input:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.phone-form__select--error,
+.phone-form__input--error {
+  border-color: #c00;
+}
+
+.phone-form__error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #c00;
+}
+
+.phone-form__submit {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+  background-color: #0066cc;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.phone-form__submit:hover {
+  background-color: #0052a3;
+}

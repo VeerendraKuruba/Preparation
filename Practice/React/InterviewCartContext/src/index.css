@@ -1,0 +1,15 @@
+:root {
+  font-family: "DM Sans", system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+    Arial, sans-serif;
+  color: #0f172a;
+  background: #0b1220;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}

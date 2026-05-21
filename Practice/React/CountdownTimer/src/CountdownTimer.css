@@ -1,0 +1,162 @@
+.countdown-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.countdown-timer h1 {
+  margin-bottom: 40px;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.timer-display {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.time {
+  font-size: 5rem;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  margin-bottom: 10px;
+  letter-spacing: 5px;
+}
+
+.finished {
+  font-size: 1.5rem;
+  color: #ffd700;
+  font-weight: bold;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.time-input {
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-input label {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.time-input input {
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 80px;
+  text-align: center;
+}
+
+.time-input input:focus {
+  outline: none;
+  border-color: white;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.time-input input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-start {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-start:hover {
+  background: #45a049;
+}
+
+.btn-pause {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-pause:hover {
+  background: #e68900;
+}
+
+.btn-resume {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-resume:hover {
+  background: #0b7dda;
+}
+
+.btn-reset {
+  background: #f44336;
+  color: white;
+}
+
+.btn-reset:hover {
+  background: #da190b;
+}
+
+@media (max-width: 600px) {
+  .countdown-timer h1 {
+    font-size: 2rem;
+  }
+
+  .time {
+    font-size: 3.5rem;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+  }
+}
+
+

@@ -1,0 +1,82 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.app h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--size), 1fr);
+  grid-template-rows: repeat(var(--size), 1fr);
+  gap: 0.5rem;
+  width: min(90vw, 240px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.cell {
+  border: 2px solid #444;
+  border-radius: 8px;
+  background: #16213e;
+  color: #eee;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.cell:hover {
+  background: #1f3460;
+  border-color: #555;
+}
+
+.cell:active {
+  transform: scale(0.97);
+}
+
+.cell--selected {
+  background: #0f3460;
+  border-color: #e94560;
+  color: #fff;
+}
+
+.cell--selected:hover {
+  background: #1a4a7a;
+  border-color: #e94560;
+}
+
+.cell:focus {
+  outline: none;
+}
+
+.cell:focus-visible {
+  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.4);
+}

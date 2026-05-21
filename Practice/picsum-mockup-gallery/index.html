@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proposed solution mockups · Picsum gallery</title>
+  <link rel="preconnect" href="https://picsum.photos" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #334155;
+      --text: #e8eef6;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-dim: rgba(56, 189, 248, 0.15);
+      --success: #4ade80;
+      --radius: 12px;
+      --font: "DM Sans", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(1200px 600px at 10% -10%, #1e3a5f 0%, transparent 55%), var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+    header {
+      margin-bottom: 1.5rem;
+    }
+    header h1 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.25rem;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .tabs {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+      padding: 0.35rem;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .tabs button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .tabs button:hover { color: var(--text); background: var(--surface2); }
+    .tabs button[aria-selected="true"] {
+      color: var(--text);
+      background: var(--accent-dim);
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+    .panel {
+      display: none !important;
+      animation: fade 0.2s ease;
+    }
+    .panel.is-active {
+      display: block !important;
+    }
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+    .panel-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    input[type="search"] {
+      width: 100%;
+      padding: 0.65rem 0.85rem 0.65rem 2.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    input[type="search"]::placeholder { color: var(--muted); }
+    input[type="search"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .badge {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .selection-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+    }
+    .selection-bar strong { color: var(--success); }
+    .btn {
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border-color: transparent;
+      color: #fff;
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-ghost { background: transparent; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.35); }
+    .card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+    .card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      background: var(--surface2);
+    }
+    .card-body {
+      padding: 0.65rem 0.75rem;
+      font-size: 0.8rem;
+    }
+    .card-body .author { font-weight: 600; color: var(--text); }
+    .card-body .dims { color: var(--muted); font-size: 0.75rem; }
+    .check {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(15, 20, 25, 0.75);
+      border: 2px solid rgba(255,255,255,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: transparent;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .card.selected .check {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #0f1419;
+    }
+    .card-actions {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+    }
+    .card-actions .btn { flex: 1; padding: 0.35rem; font-size: 0.75rem; }
+    .empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+    .error {
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: var(--radius);
+      color: #fecaca;
+    }
+    .detail {
+      display: grid;
+      gap: 1.25rem;
+    }
+    @media (min-width: 720px) {
+      .detail { grid-template-columns: 1.1fr 0.9fr; align-items: start; }
+    }
+    .detail-hero {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .detail-hero img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: min(70vh, 520px);
+      object-fit: contain;
+      background: #000;
+    }
+    .detail-aside {
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .detail-aside h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+    .detail-aside dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.35rem 1rem;
+      font-size: 0.875rem;
+    }
+    .detail-aside dt { color: var(--muted); }
+    .detail-aside dd { margin: 0; }
+    .detail-aside a { color: var(--accent); }
+    .skeleton {
+      border-radius: var(--radius);
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--surface) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: sh 1.2s ease infinite;
+      min-height: 180px;
+    }
+    @keyframes sh {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Proposed solution mockups</h1>
+      <p>Gallery from Picsum — selection, search, and detail flows for screenshots or review.</p>
+      <div class="meta">
+        <span>Fetch: <code>https://picsum.photos/v2/list?limit=10</code></span>
+        <span>Client timeout: 30s</span>
+      </div>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Mockup views">
+      <button type="button" role="tab" id="tab-sel" aria-selected="true" aria-controls="panel-sel">Display &amp; selection</button>
+      <button type="button" role="tab" id="tab-search" aria-selected="false" aria-controls="panel-search">Search filter</button>
+      <button type="button" role="tab" id="tab-detail" aria-selected="false" aria-controls="panel-detail">Detail view</button>
+    </div>
+
+    <div id="error-root"></div>
+    <div id="loading" class="grid" aria-live="polite"></div>
+
+    <section id="panel-sel" class="panel is-active" role="tabpanel" aria-labelledby="tab-sel" aria-hidden="false">
+      <div class="panel-label">Mockup · Display images and make selection</div>
+      <div class="selection-bar">
+        <span><strong id="sel-count">0</strong> selected</span>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="btn btn-ghost" id="clear-sel">Clear</button>
+          <button type="button" class="btn btn-primary" id="continue-sel">Continue with selection</button>
+        </div>
+      </div>
+      <div id="grid-sel" class="grid"></div>
+    </section>
+
+    <section id="panel-search" class="panel" role="tabpanel" aria-labelledby="tab-search" aria-hidden="true" inert>
+      <div class="panel-label">Mockup · Search filter</div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="search" id="q" placeholder="Filter by author or id…" autocomplete="off" />
+        </div>
+        <span class="badge" id="result-count"></span>
+      </div>
+      <div id="grid-search" class="grid"></div>
+    </section>
+
+    <section id="panel-detail" class="panel" role="tabpanel" aria-labelledby="tab-detail" aria-hidden="true" inert>
+      <div class="panel-label">Mockup · Detail view</div>
+      <p style="margin:0 0 1rem;color:var(--muted);font-size:0.9rem">Choose a photo below, or open detail from the other tabs.</p>
+      <div id="detail-root"></div>
+      <h3 style="font-size:0.85rem;color:var(--muted);margin:1.5rem 0 0.75rem">Pick an item</h3>
+      <div id="grid-detail-pick" class="grid"></div>
+    </section>
+  </div>
+
+  <script>
+    const FETCH_URL = "https://picsum.photos/v2/list?limit=10";
+    const FETCH_TIMEOUT_MS = 30_000;
+
+    /** @type {Array<{id:string,author:string,width:number,height:number,url:string,download_url:string}>} */
+    let items = [];
+    const selected = new Set();
+    let detailId = null;
+
+    function thumbUrl(id) {
+      return "https://picsum.photos/id/" + id + "/480/360";
+    }
+    function largeUrl(id, w, h) {
+      const mw = Math.min(w, 1200);
+      const mh = Math.round((h / w) * mw);
+      return "https://picsum.photos/id/" + id + "/" + mw + "/" + mh;
+    }
+
+    async function loadPhotos() {
+      const loading = document.getElementById("loading");
+      loading.innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton"></div>').join("");
+
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+      try {
+        const res = await fetch(FETCH_URL, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        items = await res.json();
+      } catch (e) {
+        clearTimeout(t);
+        const msg = e.name === "AbortError" ? "Request timed out after 30s." : (e.message || String(e));
+        document.getElementById("error-root").innerHTML =
+          '<div class="error" role="alert">Could not load images: ' + escapeHtml(msg) + "</div>";
+        items = [];
+      }
+      loading.innerHTML = "";
+      if (!items.length && !document.querySelector("#error-root .error")) {
+        document.getElementById("error-root").innerHTML =
+          '<div class="error" role="alert">No images returned.</div>';
+      }
+      if (items.length) {
+        detailId = detailId || items[0].id;
+      }
+      renderAll();
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function filtered() {
+      const q = (document.getElementById("q")?.value || "").trim().toLowerCase();
+      if (!q) return items;
+      return items.filter(
+        (p) =>
+          String(p.author).toLowerCase().includes(q) ||
+          String(p.id).includes(q) ||
+          String(p.width).includes(q) ||
+          String(p.height).includes(q)
+      );
+    }
+
+    function updateSelCount() {
+      const el = document.getElementById("sel-count");
+      if (el) el.textContent = String(selected.size);
+    }
+
+    function toggleSelect(id, ev) {
+      if (ev) ev.stopPropagation();
+      if (selected.has(id)) selected.delete(id);
+      else selected.add(id);
+      updateSelCount();
+      renderSelectionGrid();
+    }
+
+    function cardHtml(p, opts) {
+      const { mode } = opts;
+      const sel = selected.has(p.id);
+      const check = mode === "sel" ? '<div class="check" aria-hidden="true">✓</div>' : "";
+      const actions =
+        mode !== "sel"
+          ? '<div class="card-actions"><button type="button" class="btn" data-detail="' +
+            escapeHtml(p.id) +
+            '">Detail</button></div>'
+          : "";
+      return (
+        '<article class="card' +
+        (sel ? " selected" : "") +
+        '" data-id="' +
+        escapeHtml(p.id) +
+        '" tabindex="0" role="' +
+        (mode === "sel" ? "checkbox" : "button") +
+        '" aria-pressed="' +
+        (mode === "sel" ? sel : "false") +
+        '">' +
+        check +
+        '<img src="' +
+        escapeHtml(thumbUrl(p.id)) +
+        '" alt="" width="480" height="360" loading="lazy" />' +
+        '<div class="card-body"><div class="author">' +
+        escapeHtml(p.author) +
+        '</div><div class="dims">' +
+        p.width +
+        " × " +
+        p.height +
+        " · id " +
+        escapeHtml(p.id) +
+        "</div>" +
+        actions +
+        "</div></article>"
+      );
+    }
+
+    function bindGrid(root, mode) {
+      if (!root) return;
+      root.querySelectorAll(".card").forEach((card) => {
+        const id = card.getAttribute("data-id");
+        card.addEventListener("click", (e) => {
+          if (e.target.closest("button[data-detail]")) return;
+          if (mode === "sel") toggleSelect(id, e);
+          else {
+            detailId = id;
+            renderDetail();
+            document.getElementById("tab-detail")?.click();
+          }
+        });
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            card.click();
+          }
+        });
+      });
+      root.querySelectorAll("button[data-detail]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          detailId = btn.getAttribute("data-detail");
+          renderDetail();
+          document.getElementById("tab-detail")?.click();
+        });
+      });
+    }
+
+    function renderSelectionGrid() {
+      const root = document.getElementById("grid-sel");
+      root.innerHTML = items.map((p) => cardHtml(p, { mode: "sel" })).join("") || '<p class="empty">No items.</p>';
+      bindGrid(root, "sel");
+    }
+
+    function renderSearchGrid() {
+      const list = filtered();
+      const root = document.getElementById("grid-search");
+      const badge = document.getElementById("result-count");
+      if (badge) badge.textContent = list.length + " of " + items.length + " shown";
+      root.innerHTML = list.map((p) => cardHtml(p, { mode: "search" })).join("") || '<p class="empty">No matches.</p>';
+      bindGrid(root, "search");
+    }
+
+    function renderDetailPickGrid() {
+      const root = document.getElementById("grid-detail-pick");
+      root.innerHTML = items.map((p) => cardHtml(p, { mode: "search" })).join("");
+      bindGrid(root, "search");
+    }
+
+    function renderDetail() {
+      const root = document.getElementById("detail-root");
+      const p = items.find((x) => String(x.id) === String(detailId)) || items[0];
+      if (!p) {
+        root.innerHTML = '<p class="empty">No item selected.</p>';
+        return;
+      }
+      const src = largeUrl(p.id, p.width, p.height);
+      root.innerHTML =
+        '<div class="detail">' +
+        '<div class="detail-hero"><img src="' +
+        escapeHtml(src) +
+        '" alt="Photo by ' +
+        escapeHtml(p.author) +
+        '" /></div>' +
+        '<div class="detail-aside"><h2>' +
+        escapeHtml(p.author) +
+        '</h2><dl><dt>Image id</dt><dd>' +
+        escapeHtml(p.id) +
+        "</dd><dt>Dimensions</dt><dd>" +
+        p.width +
+        " × " +
+        p.height +
+        '</dd><dt>Source</dt><dd><a href="' +
+        escapeHtml(p.url) +
+        '" target="_blank" rel="noopener">View on Unsplash</a></dd><dt>Download</dt><dd><a href="' +
+        escapeHtml(p.download_url) +
+        '" target="_blank" rel="noopener">Original file</a></dd></dl></div></div>';
+    }
+
+    function renderAll() {
+      updateSelCount();
+      renderSelectionGrid();
+      renderSearchGrid();
+      renderDetail();
+      renderDetailPickGrid();
+    }
+
+    document.getElementById("clear-sel").addEventListener("click", () => {
+      selected.clear();
+      updateSelCount();
+      renderSelectionGrid();
+    });
+    document.getElementById("continue-sel").addEventListener("click", () => {
+      if (!selected.size) {
+        alert("Select at least one image to continue.");
+        return;
+      }
+      alert("Selected ids: " + Array.from(selected).join(", "));
+    });
+
+    document.getElementById("q").addEventListener("input", () => renderSearchGrid());
+
+    document.querySelectorAll(".tabs [role=tab]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tabs [role=tab]").forEach((t) => {
+          t.setAttribute("aria-selected", t === tab ? "true" : "false");
+        });
+        document.querySelectorAll(".panel").forEach((p) => {
+          const on = p.id === tab.getAttribute("aria-controls");
+          p.classList.toggle("is-active", on);
+          p.setAttribute("aria-hidden", on ? "false" : "true");
+          if (on) p.removeAttribute("inert");
+          else p.setAttribute("inert", "");
+        });
+      });
+    });
+
+    loadPhotos();
+  </script>
+</body>
+</html>
