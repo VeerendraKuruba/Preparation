@@ -8,36 +8,46 @@ function reduce(arr, fn) {
   return acc;
 }
 
-// --- Array.prototype.myReduce (full polyfill) ---
-Array.prototype.myReduce = function(callbackFn, initialValue) {
-  const hasInitialValue = arguments.length >= 2;
-  let accumulator = initialValue;
-  let started = hasInitialValue;
-  
+// --- Array.prototype polyfills ---
+
+Array.prototype.myMap = function (fn, thisArg) {
+  const result = [];
   for (let i = 0; i < this.length; i++) {
-    if (i in this) {
-      if (!started) {
-        // First element becomes accumulator
-        accumulator = this[i];
-        started = true;
-      } else {
-        // Call callback for subsequent elements
-        accumulator = callbackFn(accumulator, this[i], i, this);
-      }
+    if (i in this) result[i] = fn.call(thisArg, this[i], i, this);
+  }
+  return result;
+};
+
+Array.prototype.myReduce = function (fn, initial) {
+  let i = 0;
+  let acc;
+
+  if (arguments.length >= 2) {
+    acc = initial;
+  } else {
+    if (this.length === 0) {
+      throw new TypeError('Reduce of empty array with no initial value');
     }
+    while (!(i in this)) i++;
+    if (i === this.length) {
+      throw new TypeError('Reduce of empty array with no initial value');
+    }
+    acc = this[i++];
   }
-  
-  // If we never started, array was empty with no initial value
-  if (!started) {
-    throw new TypeError('Reduce of empty array with no initial value');
+
+  for (; i < this.length; i++) {
+    if (i in this) acc = fn(acc, this[i], i, this);
   }
-  
-  return accumulator;
+  return acc;
 };
 
 // Examples and tests
 console.log('--- Simple reduce(arr, fn) ---');
 console.log(reduce([1, 2, 3, 4, 5], (a, b) => a + b));           // 15
+
+console.log('\n--- Array.prototype.myMap Examples ---\n');
+console.log([1, 2, 3].myMap((n) => n * 2)); // [2, 4, 6]
+console.log([1, , 3].myMap((n) => n * 2)); // [2, empty, 6]
 
 console.log('\n--- Array.prototype.myReduce Examples ---\n');
 

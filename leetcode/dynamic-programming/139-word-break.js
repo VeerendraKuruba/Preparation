@@ -1,27 +1,31 @@
 // 139. Word Break
 // https://leetcode.com/problems/word-break/
 //
-// Given a string s and a dictionary of words, return true if s can be
-// segmented into a space-separated sequence of one or more dictionary words.
+// Can we split s into dictionary words?
+// Example: "leetcode" + ["leet","code"] → true ("leet" + "code")
 //
-// Example: s = "leetcode", wordDict = ["leet","code"] → true
+// Idea: canForm[i] = can the first i characters of s be split into valid words?
+//   canForm[0] = true  (empty string is ok)
+//   Unset indices are undefined (falsy) — same as false for our checks.
+//   Final answer lives at canForm[s.length] (needs index 0..s.length).
 
-// Time: O(n²)  Space: O(n)
 function wordBreak(s, wordDict) {
-  const wordSet = new Set(wordDict);
-  const dp = new Array(s.length + 1).fill(false);
-  dp[0] = true; // empty prefix is always valid
+  const words = new Set(wordDict);
+  const canForm = [];
+  canForm[0] = true;
 
-  for (let i = 1; i <= s.length; i++) {
-    for (let j = 0; j < i; j++) {
-      if (dp[j] && wordSet.has(s.slice(j, i))) {
-        dp[i] = true;
-        break;
+  for (let end = 1; end <= s.length; end++) {
+    for (let start = 0; start < end; start++) {
+      const word = s.slice(start, end);
+
+      if (canForm[start] && words.has(word)) {
+        canForm[end] = true;
+        break; // found one valid split, no need to check more
       }
     }
   }
 
-  return dp[s.length];
+  return !!canForm[s.length];
 }
 
 // --- tests ---

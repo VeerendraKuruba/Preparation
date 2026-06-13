@@ -18,6 +18,7 @@
 | 189 | [rotate-array](arrays/189-rotate-array.js) |
 | 215 | [kth-largest-element-in-an-array](arrays/215-kth-largest-element-in-an-array.js) |
 | 228 | [summary-ranges](arrays/228-summary-ranges.js) |
+| 152 | [maximum-product-subarray](arrays/152-maximum-product-subarray.js) |
 | 238 | [product-of-array-except-self](arrays/238-product-of-array-except-self.js) |
 | 283 | [move-zeroes](arrays/283-move-zeroes.js) |
 | 334 | [increasing-triplet-subsequence](arrays/334-increasing-triplet-subsequence.js) |
@@ -40,6 +41,7 @@
 | 209 | [minimum-size-subarray-sum](sliding-window/209-minimum-size-subarray-sum.js) |
 | 219 | [contains-duplicate-ii](sliding-window/219-contains-duplicate-ii.js) |
 | 643 | [maximum-average-subarray-i](sliding-window/643-maximum-average-subarray-i.js) |
+| 713 | [subarray-product-less-than-k](sliding-window/713-subarray-product-less-than-k.js) |
 | 1004 | [max-consecutive-ones-iii](sliding-window/1004-max-consecutive-ones-iii.js) |
 | 1456 | [maximum-number-of-vowels-in-a-substring-of-given-length](sliding-window/1456-maximum-number-of-vowels-in-a-substring-of-given-length.js) |
 | 1493 | [longest-subarray-of-1s-after-deleting-one-element](sliding-window/1493-longest-subarray-of-1s-after-deleting-one-element.js) |

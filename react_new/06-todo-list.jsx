@@ -30,9 +30,6 @@ export default function TodoList() {
   const remove = (id) =>
     setTodos((prev) => prev.filter((t) => t.id !== id));
 
-  const handleKey = (e) => {
-    if (e.key === "Enter") add();
-  };
 
   return (
     <div style={{ padding: 40, maxWidth: 480, fontFamily: "sans-serif" }}>
@@ -43,7 +40,6 @@ export default function TodoList() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKey}
           placeholder="Add a new task…"
           style={{ flex: 1, padding: "8px 12px", borderRadius: 4, border: "1px solid #ccc" }}
         />
