@@ -1,0 +1,314 @@
+# Redux Toolkit (RTK) — Modern Redux
+
+> Redux Toolkit is the **official recommended** way to write Redux. Interviews expect RTK fluency — `createSlice`, `configureStore`, `createAsyncThunk`, and increasingly RTK Query.
+
+---
+
+## 1. Why Redux Toolkit Exists
+
+**Q: What problems does Redux Toolkit solve?**
+
+**Verbal answer:**
+> "Classic Redux had too much boilerplate: action types as constants, switch statements, manual immutable updates, separate action creators, and manual store setup. RTK bundles best practices: Immer for immutable updates, `createSlice` to auto-generate actions and reducers, `configureStore` with good defaults (DevTools, thunk middleware), and utilities like `createEntityAdapter` for normalized state. The Redux team now says: use RTK for all new Redux code."
+
+---
+
+## 2. createSlice
+
+**Q: Explain `createSlice` and what it generates.**
+
+```javascript
+import { createSlice, nanoid } from '@reduxjs/toolkit';
+
+const todosSlice = createSlice({
+  name: 'todos', // prefixes action types: 'todos/add', 'todos/toggle'
+  initialState: {
+    items: [],
+    filter: 'all',
+  },
+  reducers: {
+    add(state, action) {
+      // Immer draft — "mutate" safely
+      state.items.push({
+        id: nanoid(),
+        text: action.payload,
+        done: false,
+      });
+    },
+    toggle(state, action) {
+      const todo = state.items.find((t) => t.id === action.payload);
+      if (todo) todo.done = !todo.done;
+    },
+    setFilter(state, action) {
+      state.filter = action.payload;
+    },
+  },
+});
+
+// Auto-generated action creators
+export const { add, toggle, setFilter } = todosSlice.actions;
+export default todosSlice.reducer;
+```
+
+**Q: How does Immer work inside RTK reducers?**
+
+> "When you 'mutate' `state` in a reducer, Immer tracks changes on a draft proxy and produces a new immutable state tree. You get readable code without spread hell. Rules: don't mix return and mutate in the same reducer case; either mutate the draft OR return a new value."
+
+---
+
+## 3. configureStore
+
+**Q: What does `configureStore` set up by default?**
+
+```javascript
+import { configureStore } from '@reduxjs/toolkit';
+import todosReducer from './todosSlice';
+import authReducer from './authSlice';
+
+export const store = configureStore({
+  reducer: {
+    todos: todosReducer,
+    auth: authReducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // ignore non-serializable values in specific action paths (e.g. File blobs)
+        ignoredActions: ['upload/setFile'],
+      },
+    }),
+  devTools: process.env.NODE_ENV !== 'production',
+});
+
+// Infer types for TypeScript
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+**Defaults included:**
+- Redux Thunk middleware
+- DevTools extension integration
+- Serializable state/action check (warns on non-serializable values like functions, Promises, DOM nodes)
+- Immutability check in development
+
+**Q: Why does Redux care about serializable state?**
+
+> "Serializable state enables time-travel debugging, state persistence (localStorage hydration), and predictable logging. Non-serializable values (class instances, sockets, DOM refs) break these features and can cause subtle DevTools bugs."
+
+---
+
+## 4. createAsyncThunk
+
+**Q: How does `createAsyncThunk` work?**
+
+```javascript
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+
+export const fetchUser = createAsyncThunk(
+  'users/fetchById',
+  async (userId, { rejectWithValue, signal, getState }) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, { signal });
+      if (!response.ok) throw new Error('Not found');
+      return await response.json();
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+  {
+    condition: (userId, { getState }) => {
+      const { users } = getState();
+      // Skip fetch if already loading or cached
+      if (users.loadingById[userId]) return false;
+      return true;
+    },
+  }
+);
+
+const usersSlice = createSlice({
+  name: 'users',
+  initialState: {
+    entities: {},
+    loadingById: {},
+    error: null,
+  },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUser.pending, (state, action) => {
+        state.loadingById[action.meta.arg] = true;
+      })
+      .addCase(fetchUser.fulfilled, (state, action) => {
+        const user = action.payload;
+        state.entities[user.id] = user;
+        state.loadingById[action.meta.arg] = false;
+      })
+      .addCase(fetchUser.rejected, (state, action) => {
+        state.loadingById[action.meta.arg] = false;
+        state.error = action.payload ?? action.error.message;
+      });
+  },
+});
+```
+
+**Auto-dispatched action types:**
+- `users/fetchById/pending`
+- `users/fetchById/fulfilled`
+- `users/fetchById/rejected`
+
+**Q: `extraReducers` vs `reducers` in a slice?**
+
+| | `reducers` | `extraReducers` |
+|---|-----------|-----------------|
+| Actions | Generated by this slice | External actions (async thunks, other slices) |
+| Action creators | Yes, exported | No — handle existing action types |
+| Use case | Sync slice-local mutations | Async lifecycle, cross-slice responses |
+
+---
+
+## 5. Typed Hooks Pattern (TypeScript)
+
+```typescript
+import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
+import type { RootState, AppDispatch } from './store';
+
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
+// Usage
+function UserProfile({ userId }: { userId: string }) {
+  const user = useAppSelector((s) => s.users.entities[userId]);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchUser(userId));
+  }, [userId, dispatch]);
+}
+```
+
+---
+
+## 6. RTK Query Overview
+
+**Q: What is RTK Query and when should you use it?**
+
+**Verbal answer:**
+> "RTK Query is a data-fetching and caching layer built on Redux. It auto-generates reducers, actions, and hooks for API endpoints. It handles caching, deduplication, background refetch, invalidation tags, and loading/error states. Use it when server state lives in your Redux app. For greenfield apps, many teams put server state in TanStack Query instead and keep Redux for true client global state — but RTK Query is the right answer when you're already on Redux and want to avoid hand-rolling fetch thunks."
+
+```javascript
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+export const api = createApi({
+  reducerPath: 'api',
+  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  tagTypes: ['Post', 'User'],
+  endpoints: (builder) => ({
+    getPosts: builder.query({
+      query: () => '/posts',
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: 'Post', id })), { type: 'Post', id: 'LIST' }]
+          : [{ type: 'Post', id: 'LIST' }],
+    }),
+    addPost: builder.mutation({
+      query: (body) => ({ url: '/posts', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Post', id: 'LIST' }],
+    }),
+  }),
+});
+
+export const { useGetPostsQuery, useAddPostMutation } = api;
+
+// store must include:
+// reducer: { [api.reducerPath]: api.reducer }
+// middleware: (gDM) => gDM().concat(api.middleware)
+```
+
+**Q: RTK Query vs `createAsyncThunk`?**
+
+| | `createAsyncThunk` | RTK Query |
+|---|-------------------|-----------|
+| Caching | Manual | Built-in with cache keys |
+| Deduplication | Manual | Automatic |
+| Boilerplate | Medium | Low for CRUD APIs |
+| Flexibility | Full control | Opinionated API slice |
+| Best for | One-off async, complex custom flows | REST/GraphQL resource fetching |
+
+---
+
+## 7. createEntityAdapter
+
+**Q: Why normalize state? What does `createEntityAdapter` provide?**
+
+```javascript
+import { createEntityAdapter, createSlice } from '@reduxjs/toolkit';
+
+const usersAdapter = createEntityAdapter({
+  selectId: (user) => user.id,
+  sortComparer: (a, b) => a.name.localeCompare(b.name),
+});
+
+const usersSlice = createSlice({
+  name: 'users',
+  initialState: usersAdapter.getInitialState({ loading: false }),
+  reducers: {
+    userAdded: usersAdapter.addOne,
+    userUpdated: usersAdapter.updateOne,
+    usersReceived: usersAdapter.setAll,
+  },
+});
+
+// Generated selectors
+export const {
+  selectAll: selectAllUsers,
+  selectById: selectUserById,
+  selectIds: selectUserIds,
+} = usersAdapter.getSelectors((state) => state.users);
+```
+
+> "Normalized state stores entities in `{ ids: [], entities: { [id]: entity } }`. O(1) lookups by id, stable references for list items, easier updates. `createEntityAdapter` provides CRUD reducers and memoized selectors out of the box."
+
+---
+
+## 8. RTK Interview Questions
+
+**Q: Can you use RTK without React?**
+> "Yes. RTK is Redux — works with any UI. React bindings are separate (`react-redux`, RTK Query's `/react` entry)."
+
+**Q: What is `prepare` in `createSlice`?**
+```javascript
+reducers: {
+  addTodo: {
+    reducer(state, action) { state.items.push(action.payload); },
+    prepare(text) {
+      return { payload: { id: nanoid(), text, done: false } };
+    },
+  },
+}
+```
+> "Customizes the action payload before the reducer runs — useful when action shape differs from arguments."
+
+**Q: How do you reset state on logout?**
+```javascript
+const rootReducer = (state, action) => {
+  if (action.type === 'auth/logout') {
+    return appReducer(undefined, action); // re-init all slices
+  }
+  return appReducer(state, action);
+};
+```
+
+**Q: `redux-persist` with RTK?**
+> "Wrap root reducer with `persistReducer`, whitelist slices (e.g. auth, preferences), never persist volatile server cache (RTK Query has its own persistence patterns)."
+
+---
+
+## Quick-Fire RTK
+
+| Question | Answer |
+|----------|--------|
+| Is RTK a different library? | No — official Redux package, wraps core Redux |
+| Default middleware? | Thunk + serializable/immutable checks in dev |
+| `nanoid` vs `uuid`? | RTK exports `nanoid` for action-unique ids |
+| Slice name purpose? | Action type prefix + DevTools grouping |
+| `builder.addMatcher`? | Handle multiple action types with one handler |
