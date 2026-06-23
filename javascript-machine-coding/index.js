@@ -4,7 +4,7 @@ export { promiseAll } from './03-promise-all.js';
 export { deepClone } from './04-deep-clone.js';
 export { retryFetch, withRetry } from './05-retry-api.js';
 export { PubSub } from './06-pub-sub.js';
-export { AsyncRateLimiter, SlidingWindowLimiter } from './07-rate-limiter.js';
+export { createRateLimiter, rateLimit } from './07-rate-limiter.js';
 export { ConcurrencyPool, scheduleWithConcurrency } from './08-task-scheduler-concurrency.js';
 export {
   sumScaledEvens,

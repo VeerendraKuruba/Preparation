@@ -1,60 +1,53 @@
-/**
- * Token bucket: refill refillPerMs tokens/ms up to capacity.
- */
+/** Token-bucket rate limiter — N requests per interval (default 1s). */
 
-export class AsyncRateLimiter {
-  constructor(capacity, refillPerMs) {
-    this.capacity = capacity;
-    this.refillPerMs = refillPerMs;
-    this.tokens = capacity;
-    this.lastRefill = Date.now();
-    this.pending = [];
-  }
+export function createRateLimiter(limit, interval = 1000) {
+  const queue = [];
+  let tokens = limit;
 
-  refill() {
-    const now = Date.now();
-    const delta = now - this.lastRefill;
-    this.lastRefill = now;
-    this.tokens = Math.min(this.capacity, this.tokens + delta * this.refillPerMs);
-  }
-
-  process() {
-    this.refill();
-    while (this.tokens >= 1 && this.pending.length > 0) {
-      this.tokens -= 1;
-      this.pending.shift()();
+  function drain() {
+    while (tokens > 0 && queue.length) {
+      tokens--;
+      queue.shift()();
     }
-    if (this.pending.length === 0) return;
-    const need = 1 - this.tokens;
-    const waitMs = Math.max(1, Math.ceil(need / this.refillPerMs));
-    setTimeout(() => this.process(), waitMs);
   }
 
-  acquire() {
-    this.refill();
-    if (this.tokens >= 1) {
-      this.tokens -= 1;
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => {
-      this.pending.push(resolve);
-      queueMicrotask(() => this.process());
+  setInterval(() => {
+    tokens = limit;
+    drain();
+  }, interval);
+
+  function schedule(task) {
+    return new Promise((resolve, reject) => {
+      queue.push(() => {
+        task().then(resolve, reject);
+      });
+      drain(); // run immediately if tokens are available
     });
   }
+
+  return schedule;
 }
 
-export class SlidingWindowLimiter {
-  constructor(maxCalls, windowMs) {
-    this.maxCalls = maxCalls;
-    this.windowMs = windowMs;
-    this.times = [];
-  }
+/** Wrap a single async fn under a shared limiter. */
+export function rateLimit(fn, limit, interval = 1000) {
+  const schedule = createRateLimiter(limit, interval);
+  return (...args) => schedule(() => fn(...args));
+}
 
-  tryCall() {
-    const now = Date.now();
-    this.times = this.times.filter((t) => now - t < this.windowMs);
-    if (this.times.length >= this.maxCalls) return false;
-    this.times.push(now);
-    return true;
-  }
+// ─── Demo ─────────────────────────────────────────────────────────────────────
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const schedule = createRateLimiter(3, 1000); // 3 req/s
+
+  const tasks = Array.from({ length: 7 }, (_, i) =>
+    schedule(async () => {
+      console.log(`request ${i + 1} at ${Date.now()}`);
+      return i + 1;
+    })
+  );
+
+  Promise.all(tasks).then((ids) => {
+    console.log("done:", ids);
+    process.exit(0);
+  });
 }
