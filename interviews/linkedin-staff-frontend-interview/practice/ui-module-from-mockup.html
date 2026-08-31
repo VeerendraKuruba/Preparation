@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn FE — Construct Module Practice</title>
+  <link rel="stylesheet" href="ui-module-from-mockup.css" />
+</head>
+<body>
+  <!--
+    OFFICIAL LINKEDIN EXAMPLE:
+    Construct module using HTML + CSS → https://imgur.com/4YXYSsu
+
+    PRACTICE (20 min timed, CoderPad-style):
+    1. Recreate structure from imgur reference (or this approximation)
+    2. Semantic HTML only — no div soup for buttons
+    3. Flexbox layout, border-radius, subtle shadow
+    4. Mention a11y: alt text, focus states, color contrast
+    5. No CSS framework — pure CSS
+
+    Compare your result to this file when done.
+  -->
+
+  <article class="construct-module" aria-labelledby="module-title">
+    <header class="construct-module__header">
+      <img
+        class="construct-module__avatar"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect fill='%23ccc' width='48' height='48'/%3E%3C/svg%3E"
+        alt="Jane Doe profile photo"
+        width="48"
+        height="48"
+      />
+      <div class="construct-module__meta">
+        <h2 id="module-title" class="construct-module__title">Jane Doe</h2>
+        <p class="construct-module__subtitle">Senior Software Engineer · San Francisco Bay Area</p>
+        <span class="construct-module__badge">Open to work</span>
+      </div>
+    </header>
+
+    <div class="construct-module__body">
+      <p class="construct-module__description">
+        Building scalable member experiences. Interested in frontend platform, design systems, and performance.
+      </p>
+
+      <dl class="construct-module__stats">
+        <div class="construct-module__stat">
+          <strong>500+</strong>
+          Connections
+        </div>
+        <div class="construct-module__stat">
+          <strong>12</strong>
+          Mutual
+        </div>
+      </dl>
+
+      <div class="construct-module__actions">
+        <button type="button" class="construct-module__btn construct-module__btn--primary">
+          Connect
+        </button>
+        <button type="button" class="construct-module__btn construct-module__btn--secondary">
+          Message
+        </button>
+      </div>
+    </div>
+  </article>
+</body>
+</html>

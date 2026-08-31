@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkedIn FE Phone Screen — Practice Demos</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; max-width: 720px; margin-inline: auto; }
+    h1 { font-size: 1.25rem; }
+    section { margin-block: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd; }
+    #feed {
+      height: 320px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 0.5rem;
+    }
+    .feed-item {
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      background: #f3f6f8;
+      border-radius: 4px;
+    }
+    #delegation-list { list-style: none; padding: 0; }
+    #delegation-list button { margin: 0.25rem 0; }
+    #delegation-status { color: #0a66c2; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>LinkedIn Staff FE — Phone Screen Practice</h1>
+
+  <section aria-labelledby="feed-heading">
+    <h2 id="feed-heading">Infinite Scroll</h2>
+    <div id="feed" role="feed" aria-live="polite" aria-busy="false"></div>
+  </section>
+
+  <section aria-labelledby="delegation-heading">
+    <h2 id="delegation-heading">Event Delegation</h2>
+    <p id="delegation-status">Click an item</p>
+    <ul id="delegation-list">
+      <li><button type="button" data-item-id="1">Item 1</button></li>
+      <li><button type="button" data-item-id="2">Item 2</button></li>
+    </ul>
+    <button type="button" id="add-item">Add dynamic item</button>
+  </section>
+
+  <script type="module">
+    import { createInfiniteScroll } from "./infinite-scroll-vanilla.js";
+    import { setupDelegation, runDelegationDemo } from "./event-delegation-demo.js";
+
+    window.runDelegationDemo = runDelegationDemo;
+
+    const mockData = Array.from({ length: 55 }, (_, i) => ({
+      id: i,
+      title: `Feed item #${i + 1}`,
+    }));
+
+    createInfiniteScroll({
+      container: document.getElementById("feed"),
+      pageSize: 10,
+      fetchPage: async (page) => {
+        await new Promise((r) => setTimeout(r, 300));
+        const start = page * 10;
+        return mockData.slice(start, start + 10);
+      },
+      renderItem: (item) => {
+        const el = document.createElement("article");
+        el.className = "feed-item";
+        el.textContent = item.title;
+        return el;
+      },
+    });
+
+    runDelegationDemo();
+  </script>
+</body>
+</html>
