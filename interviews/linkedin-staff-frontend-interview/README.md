@@ -12,6 +12,8 @@
 | [rounds/01-staff-technical-phone-screen.md](./rounds/01-staff-technical-phone-screen.md) | Round 1 strategy, timeline, CoderPad tips |
 | [04-behavioral-staff-signals.md](./04-behavioral-staff-signals.md) | Leadership, Execution, Craftsmanship + Kevin Scott / Alex Vauthey blogs |
 | [08-official-resources.md](./08-official-resources.md) | Maps LinkedIn's 3 study resources to exercises |
+| [09-arun-m-questions-toc.md](./09-arun-m-questions-toc.md) | **55 most-asked JS problems** (Arun M TOC) + LinkedIn P0 map |
+| [arun-m-qna/](./arun-m-qna/) | Full Q&A + implementations for all 55 |
 | [05-study-plan.md](./05-study-plan.md) | 1–2 week prep schedule |
 | [00-rounds.md](./00-rounds.md) | Full interview loop preview |
 
