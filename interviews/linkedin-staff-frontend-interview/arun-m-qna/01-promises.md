@@ -6,97 +6,119 @@
 
 ## Q01. Implement a custom JavaScript Promise
 
-**Ask:** Build a minimal Promise with `then`, `catch`, `finally`, and resolve/reject.
+**Ask:** Build a minimal Promise with `then`, `catch`, and resolve/reject.
 
-**Approach:** States: `pending | fulfilled | rejected`. Queue handlers; flush on settle. `then` always returns a new Promise (chaining).
+**Approach (functional — easiest for interviews):** Factory + closures. No `class` / `this`.
+
+| Piece | Role |
+|-------|------|
+| `state` / `value` | `"pending"` → `"fulfilled"` \| `"rejected"` |
+| `onFulfilled` / `onRejected` | Queues of waiting callbacks |
+| `resolve` / `reject` | Settle **once**, then flush queues |
+| `then` | Always returns a **new** promise (chaining) |
+
+**Practice file:** [../practice/custom-promise-functional.js](../practice/custom-promise-functional.js)
 
 ```javascript
-class MyPromise {
-  constructor(executor) {
-    this.state = "pending";
-    this.value = undefined;
-    this.handlers = [];
+function createPromise(executor) {
+  let state = "pending"; // "pending" | "fulfilled" | "rejected"
+  let value;
+  const onFulfilled = [];
+  const onRejected = [];
 
-    const resolve = (value) => {
-      if (this.state !== "pending") return;
-      // Thenable assimilation (simplified)
-      if (value && typeof value.then === "function") {
-        value.then(resolve, reject);
-        return;
-      }
-      this.state = "fulfilled";
-      this.value = value;
-      this.handlers.forEach(this.#handle);
-    };
+  function resolve(val) {
+    if (state !== "pending") return;
 
-    const reject = (reason) => {
-      if (this.state !== "pending") return;
-      this.state = "rejected";
-      this.value = reason;
-      this.handlers.forEach(this.#handle);
-    };
-
-    try {
-      executor(resolve, reject);
-    } catch (err) {
-      reject(err);
-    }
-  }
-
-  #handle = (handler) => {
-    if (this.state === "pending") {
-      this.handlers.push(handler);
+    // If resolved with another thenable, adopt its state
+    if (val && typeof val.then === "function") {
+      val.then(resolve, reject);
       return;
     }
-    queueMicrotask(() => {
-      const cb =
-        this.state === "fulfilled" ? handler.onFulfilled : handler.onRejected;
-      if (!cb) {
-        this.state === "fulfilled"
-          ? handler.resolve(this.value)
-          : handler.reject(this.value);
-        return;
+
+    state = "fulfilled";
+    value = val;
+    onFulfilled.forEach((fn) => fn(val));
+  }
+
+  function reject(err) {
+    if (state !== "pending") return;
+    state = "rejected";
+    value = err;
+    onRejected.forEach((fn) => fn(err));
+  }
+
+  function then(onSuccess, onError) {
+    return createPromise((resolveNext, rejectNext) => {
+      function handleSuccess(val) {
+        if (typeof onSuccess !== "function") {
+          resolveNext(val); // pass-through
+          return;
+        }
+        try {
+          resolveNext(onSuccess(val));
+        } catch (e) {
+          rejectNext(e);
+        }
       }
-      try {
-        handler.resolve(cb(this.value));
-      } catch (err) {
-        handler.reject(err);
+
+      function handleError(err) {
+        if (typeof onError !== "function") {
+          rejectNext(err); // pass-through
+          return;
+        }
+        try {
+          resolveNext(onError(err)); // catch can recover
+        } catch (e) {
+          rejectNext(e);
+        }
+      }
+
+      if (state === "fulfilled") {
+        queueMicrotask(() => handleSuccess(value));
+      } else if (state === "rejected") {
+        queueMicrotask(() => handleError(value));
+      } else {
+        onFulfilled.push(handleSuccess);
+        onRejected.push(handleError);
       }
     });
-  };
-
-  then(onFulfilled, onRejected) {
-    return new MyPromise((resolve, reject) => {
-      this.#handle({ onFulfilled, onRejected, resolve, reject });
-    });
   }
 
-  catch(onRejected) {
-    return this.then(undefined, onRejected);
+  function _catch(onError) {
+    return then(undefined, onError);
   }
 
-  finally(onFinally) {
-    return this.then(
-      (v) => MyPromise.resolve(onFinally()).then(() => v),
-      (e) =>
-        MyPromise.resolve(onFinally()).then(() => {
-          throw e;
-        })
-    );
+  try {
+    executor(resolve, reject);
+  } catch (e) {
+    reject(e);
   }
 
-  static resolve(v) {
-    return new MyPromise((res) => res(v));
-  }
-  static reject(e) {
-    return new MyPromise((_, rej) => rej(e));
-  }
+  return { then, catch: _catch };
 }
+
+createPromise.resolve = (val) => createPromise((res) => res(val));
+createPromise.reject = (err) => createPromise((_, rej) => rej(err));
 ```
 
-**Edge cases:** Resolve twice (ignore), throw in executor, thenable resolve, microtask ordering.
+**Optional `finally` (add if interviewer asks):**
 
-**Follow-ups:** How does this differ from A+? What about `Promise.resolve` of another promise?
+```javascript
+function _finally(onFinally) {
+  return then(
+    (v) => createPromise.resolve(onFinally()).then(() => v),
+    (e) =>
+      createPromise.resolve(onFinally()).then(() => {
+        throw e;
+      })
+  );
+}
+// return { then, catch: _catch, finally: _finally };
+```
+
+**Edge cases:** Resolve twice (ignore), throw in executor, thenable resolve, microtask ordering for already-settled `then`.
+
+**Follow-ups:** How does this differ from A+? What about `Promise.resolve` of another promise? Add `finally`?
 
 ---
 
